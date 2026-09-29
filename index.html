@@ -126,11 +126,121 @@
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:40;}
   .sidebar-backdrop.active{display:block;}
 
+  /* ===== DASHBOARD ===== */
   .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:10px;}
   .chart-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 2px 4px rgba(0,0,0,.05);}
   .chart-card h4{font-size:13px;color:var(--primary-dark);margin:0 0 6px 0;text-align:center;}
-  .chart-card canvas{max-height:200px;max-width:100%;}
   @media(max-width:768px){.dashboard-grid{grid-template-columns:1fr;}}
+
+  /* === REVISI DASHBOARD: tinggi chart + klik expand === */
+  .chart-card{
+    height:300px;
+    display:flex;
+    flex-direction:column;
+    cursor:pointer;
+    transition:box-shadow 0.2s, transform 0.15s;
+    position:relative;
+  }
+  .chart-card canvas{
+    flex:1;
+    max-width:100%;
+    max-height:100%;
+  }
+  .chart-card:hover{
+    box-shadow:0 6px 18px rgba(15,107,82,0.18);
+    transform:translateY(-2px);
+  }
+  .chart-card .chart-hint{
+    position:absolute;
+    top:8px;
+    right:10px;
+    font-size:10px;
+    color:var(--muted);
+    opacity:0.55;
+    pointer-events:none;
+    font-style:italic;
+  }
+  .chart-card .chart-total{
+    font-size:11px;
+    color:var(--primary);
+    font-weight:700;
+    background:#e6f4ea;
+    padding:2px 8px;
+    border-radius:10px;
+    display:inline-block;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+  .chart-card.expanded{
+    position:fixed;
+    inset:20px;
+    z-index:95;
+    background:#fff;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+    display:flex;
+    flex-direction:column;
+    cursor:default;
+    transform:none;
+    padding:20px;
+    height:auto;
+  }
+  .chart-card.expanded:hover{
+    transform:none;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+  }
+  .chart-card.expanded .chart-hint{
+    display:none;
+  }
+  .chart-card.expanded h4{
+    font-size:17px;
+    margin-bottom:14px;
+    padding-right:44px;
+  }
+  .chart-card.expanded canvas{
+    flex:1;
+    max-height:calc(100vh - 120px);
+    height:calc(100vh - 120px);
+  }
+  .chart-close-btn{
+    display:none;
+    position:absolute;
+    top:14px;
+    right:16px;
+    background:var(--danger);
+    color:#fff;
+    border:none;
+    border-radius:50%;
+    width:34px;
+    height:34px;
+    font-size:22px;
+    line-height:1;
+    cursor:pointer;
+    z-index:100;
+    box-shadow:0 2px 8px rgba(0,0,0,0.25);
+    transition:transform 0.15s;
+  }
+  .chart-close-btn:hover{
+    transform:scale(1.08);
+  }
+  .chart-card.expanded .chart-close-btn{
+    display:block;
+  }
+  .dashboard-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    z-index:90;
+    animation:fadeIn 0.15s ease;
+  }
+  .dashboard-backdrop.active{
+    display:block;
+  }
+  @keyframes fadeIn{
+    from{opacity:0;}
+    to{opacity:1;}
+  }
+  /* === END REVISI DASHBOARD === */
 </style>
 </head>
 <body>
@@ -221,6 +331,7 @@
             <option value="November">November</option><option value="Desember">Desember</option>
           </select>
           <button class="btn btn-secondary" id="btnRefreshDashboard">🔄 Refresh</button>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto;font-style:italic;">💡 Klik grafik untuk memperbesar</span>
         </div>
         <div id="dashboardMsg" class="msg"></div>
         <div class="dashboard-grid" id="dashboardGrid">
@@ -682,6 +793,9 @@
   </div>
 </div>
 
+<!-- === REVISI DASHBOARD: Backdrop untuk chart expanded === -->
+<div id="dashboardBackdrop" class="dashboard-backdrop"></div>
+
 <div id="modalOverlay" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-head"><h3>Catatan</h3><button id="btnCloseModal" class="btn-close">&times;</button></div>
@@ -706,10 +820,8 @@
   var SUPABASE_URL = 'https://aymjtagmudslbvtgaqan.supabase.co';
   var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5bWp0YWdtdWRzbGJ2dGdhcWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NTQzMDksImV4cCI6MjEwNjIzMDMwOX0.vd9RWkCSVP3BIaMHgINhGYdx9c7R9CDvamwkGVdi_TQ';
 
-  // Inisialisasi client Supabase
   var supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Mapping nama sheet (frontend) → nama tabel (Supabase)
   var TABLE_MAP = {
     'Malaria': 'malaria',
     'MalariaLab': 'malaria_lab',
@@ -723,10 +835,8 @@
     'Difteri': 'difteri'
   };
 
-  // Field yang TIDAK dikirim ke Supabase
   var SKIP_FIELDS = ['_target', '_rowIndex', '_id', 'id', 'created_at', 'rowIndex'];
 
-  // ================= KONVERSI camelCase ↔ snake_case =================
   function camelToSnake(str) {
     return str.replace(/[A-Z]/g, function(l) { return '_' + l.toLowerCase(); });
   }
@@ -750,7 +860,7 @@
       out[snakeToCamel(k)] = row[k];
     });
     out.id = row.id;
-    out.rowIndex = row.id; // alias agar kode lama tetap jalan
+    out.rowIndex = row.id;
     return out;
   }
 
@@ -769,7 +879,6 @@
     rabiesDataFiltered: []
   };
 
-  // ================= HELPER UMUM =================
   function showMsg(elId, text, type){
     var el = document.getElementById(elId);
     if (!el) return;
@@ -824,90 +933,50 @@
       callback(null, state.cache[sheetName]);
       return;
     }
-
     var tableName = TABLE_MAP[sheetName];
-    if (!tableName) {
-      callback('Tabel tidak dikenal: ' + sheetName, null);
-      return;
-    }
+    if (!tableName) { callback('Tabel tidak dikenal: ' + sheetName, null); return; }
 
-    supabaseClient
-      .from(tableName)
-      .select('*')
-      .order('id', { ascending: false })
+    supabaseClient.from(tableName).select('*').order('id', { ascending: false })
       .then(function(res) {
-        if (res.error) {
-          callback(res.error.message, null);
-          return;
-        }
+        if (res.error) { callback(res.error.message, null); return; }
         var rows = (res.data || []).map(fromSnakeRow);
         state.cache[sheetName] = rows;
         callback(null, rows);
       })
-      .catch(function(err) {
-        callback(err.message, null);
-      });
+      .catch(function(err) { callback(err.message, null); });
   }
 
   function postToSheet(sheetName, payload) {
     var tableName = TABLE_MAP[sheetName];
-    if (!tableName) {
-      return Promise.resolve({ status: 'error', message: 'Tabel tidak dikenal: ' + sheetName });
-    }
-
+    if (!tableName) return Promise.resolve({ status: 'error', message: 'Tabel tidak dikenal: ' + sheetName });
     var snakePayload = toSnakePayload(payload);
-
-    return supabaseClient
-      .from(tableName)
-      .insert([snakePayload])
-      .select()
+    return supabaseClient.from(tableName).insert([snakePayload]).select()
       .then(function(res) {
-        if (res.error) {
-          return { status: 'error', message: res.error.message };
-        }
+        if (res.error) return { status: 'error', message: res.error.message };
         state.cache[sheetName] = null;
         return { status: 'success', message: 'Data tersimpan', data: res.data };
       })
-      .catch(function(err) {
-        return { status: 'error', message: err.message };
-      });
+      .catch(function(err) { return { status: 'error', message: err.message }; });
   }
 
   function putToSheet(sheetName, payload) {
     var tableName = TABLE_MAP[sheetName];
-    if (!tableName) {
-      return Promise.resolve({ status: 'error', message: 'Tabel tidak dikenal: ' + sheetName });
-    }
-
+    if (!tableName) return Promise.resolve({ status: 'error', message: 'Tabel tidak dikenal: ' + sheetName });
     var id = payload._rowIndex || payload.id || payload._id;
-    if (!id) {
-      return Promise.resolve({ status: 'error', message: 'ID data tidak ditemukan' });
-    }
-
+    if (!id) return Promise.resolve({ status: 'error', message: 'ID data tidak ditemukan' });
     var snakePayload = toSnakePayload(payload);
     delete snakePayload.id;
-
-    return supabaseClient
-      .from(tableName)
-      .update(snakePayload)
-      .eq('id', id)
-      .select()
+    return supabaseClient.from(tableName).update(snakePayload).eq('id', id).select()
       .then(function(res) {
-        if (res.error) {
-          return { status: 'error', message: res.error.message };
-        }
+        if (res.error) return { status: 'error', message: res.error.message };
         state.cache[sheetName] = null;
         return { status: 'success', message: 'Data diperbarui', data: res.data };
       })
-      .catch(function(err) {
-        return { status: 'error', message: err.message };
-      });
+      .catch(function(err) { return { status: 'error', message: err.message }; });
   }
 
   function testConnection() {
-    return supabaseClient
-      .from('malaria')
-      .select('id', { count: 'exact', head: true })
+    return supabaseClient.from('malaria').select('id', { count: 'exact', head: true })
       .then(function(res) {
         if (res.error) throw new Error(res.error.message);
         return { status: 'success', count: res.count || 0 };
@@ -915,15 +984,12 @@
   }
 
   // =================================================================
-  // EDIT DATA HYPERHEP (Modal & Fungsi)
+  // EDIT DATA HYPERHEP
   // =================================================================
   var currentEditItem = null;
 
   function openEditModal(item) {
-    if (!item || !item.id) {
-      alert('Data tidak valid untuk diedit.');
-      return;
-    }
+    if (!item || !item.id) { alert('Data tidak valid untuk diedit.'); return; }
     currentEditItem = item;
     var overlay = document.getElementById('editModalOverlay');
     if (!overlay) {
@@ -981,9 +1047,7 @@
       overlay = document.getElementById('editModalOverlay');
       document.getElementById('btnCloseEditModal').addEventListener('click', closeEditModal);
       document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
-      overlay.addEventListener('click', function(ev){
-        if (ev.target === overlay) closeEditModal();
-      });
+      overlay.addEventListener('click', function(ev){ if (ev.target === overlay) closeEditModal(); });
       document.getElementById('editTglLahirIbu').addEventListener('change', function(){
         document.getElementById('editUmurIbu').value = hitungUmur(this.value);
       });
@@ -1020,7 +1084,7 @@
     fillField('editJamHB0', item.jamHB0);
     fillField('editSkriningAwal', item.skriningAwal);
     fillField('editSkriningCatatan', item.skriningCatatan);
-    fillField('editRowIndex', item.id); // ← pakai id Supabase
+    fillField('editRowIndex', item.id);
     overlay.style.display = 'flex';
     hideMsg('editMsg');
   }
@@ -1048,25 +1112,16 @@
           showMsg('editMsg', 'Data berhasil diperbarui.', 'ok');
           state.cache.HyperhepPasien = null;
           var target = document.getElementById('tab-hyperhep-laporan');
-          if (target && target.style.display !== 'none') {
-            refreshHyperhepLaporan();
-          }
+          if (target && target.style.display !== 'none') refreshHyperhepLaporan();
           setTimeout(closeEditModal, 800);
         } else {
           showMsg('editMsg', 'Gagal memperbarui: ' + (json.message||''), 'err');
         }
       })
-      .catch(function(err){
-        showMsg('editMsg', 'Gagal: ' + err.message, 'err');
-      })
-      .then(function(){
-        btn.disabled = false; btn.textContent = '💾 Simpan Perubahan';
-      });
+      .catch(function(err){ showMsg('editMsg', 'Gagal: ' + err.message, 'err'); })
+      .then(function(){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan'; });
   }
 
-  // =================================================================
-  // BADGE
-  // =================================================================
   function badgeHasil(hasil){
     if (!hasil) return '';
     var cls = 'falciparum';
@@ -1077,7 +1132,7 @@
   }
 
   // =================================================================
-  // RENDER & FILTER – MALARIA
+  // MALARIA
   // =================================================================
   function renderLaporan(list){
     var tbody = document.getElementById('bodyLaporan');
@@ -1103,8 +1158,7 @@
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextMalaria, 'Malaria', 'namaPasien');
+        openNoteModal(list[idx], buildCatatanTextMalaria, 'Malaria', 'namaPasien');
       });
     });
   }
@@ -1117,9 +1171,7 @@
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasien||'').toLowerCase().indexOf(q)>-1 || (item.noReg||'').toLowerCase().indexOf(q)>-1;
       var bt = hitungBulanTahun(item.tglKejadian);
-      var matchBulan = !bulan || bt.bulan === bulan;
-      var matchTahun = !tahun || bt.tahun === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || bt.bulan === bulan) && (!tahun || bt.tahun === tahun);
     });
     state.filteredData.Malaria = filtered;
     renderLaporan(filtered);
@@ -1181,8 +1233,7 @@
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextMalariaLab, 'Malaria Lab', 'namaPasienLab');
+        openNoteModal(list[idx], buildCatatanTextMalariaLab, 'Malaria Lab', 'namaPasienLab');
       });
     });
   }
@@ -1194,9 +1245,7 @@
     var list = state.data.MalariaLab || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasienLab||'').toLowerCase().indexOf(q)>-1 || (item.noRegLab||'').toLowerCase().indexOf(q)>-1;
-      var matchBulan = !bulan || item.bulanLab === bulan;
-      var matchTahun = !tahun || String(item.tahunLab) === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || item.bulanLab === bulan) && (!tahun || String(item.tahunLab) === tahun);
     });
     state.filteredData.MalariaLab = filtered;
     state.malariaLabDataFiltered = filtered;
@@ -1224,7 +1273,7 @@
   }
 
   // =================================================================
-  // HYPERHEP STOK
+  // HYPERHEP
   // =================================================================
   function renderStokRiwayat(list){
     var tbody = document.getElementById('bodyStokRiwayat');
@@ -1265,9 +1314,6 @@
     });
   }
 
-  // =================================================================
-  // HYPERHEP PASIEN
-  // =================================================================
   var userEditedNamaBayi = false;
 
   function updateInfoSisaStok(){
@@ -1315,25 +1361,13 @@
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextHyperhep, 'Hyperhep', 'namaBayi');
-      });
+      btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextHyperhep, 'Hyperhep', 'namaBayi'); });
     });
     tbody.querySelectorAll('.surat-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        printSuratHyperhep(item);
-      });
+      btn.addEventListener('click', function(){ printSuratHyperhep(list[parseInt(btn.dataset.idx)]); });
     });
     tbody.querySelectorAll('.edit-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openEditModal(item);
-      });
+      btn.addEventListener('click', function(){ openEditModal(list[parseInt(btn.dataset.idx)]); });
     });
   }
 
@@ -1345,9 +1379,7 @@
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaBayi||'').toLowerCase().indexOf(q)>-1 || (item.namaIbu||'').toLowerCase().indexOf(q)>-1;
       var bt = hitungBulanTahun(item.tglMelahirkan);
-      var matchBulan = !bulan || bt.bulan === bulan;
-      var matchTahun = !tahun || bt.tahun === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || bt.bulan === bulan) && (!tahun || bt.tahun === tahun);
     });
     state.filteredData.HyperhepPasien = filtered;
     renderHyperhepLaporan(filtered);
@@ -1400,11 +1432,7 @@
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextTuberkulin, 'Tuberkulin', 'namaPasien');
-      });
+      btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextTuberkulin, 'Tuberkulin', 'namaPasien'); });
     });
   }
 
@@ -1415,9 +1443,7 @@
     var list = state.data.Tuberkulin || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasien||'').toLowerCase().indexOf(q)>-1;
-      var matchBulan = !bulan || item.bulanPemberian === bulan;
-      var matchTahun = !tahun || String(item.tahunPemberian) === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || item.bulanPemberian === bulan) && (!tahun || String(item.tahunPemberian) === tahun);
     });
     state.filteredData.Tuberkulin = filtered;
     renderTuberkulinLaporan(filtered);
@@ -1517,11 +1543,7 @@
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextRabies, 'Rabies', 'namaPasien');
-      });
+      btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextRabies, 'Rabies', 'namaPasien'); });
     });
   }
 
@@ -1532,9 +1554,7 @@
     var list = state.data.RabiesPasien || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasien||'').toLowerCase().indexOf(q)>-1 || (item.noReg||'').toLowerCase().indexOf(q)>-1;
-      var matchBulan = !bulan || item.bulanKeRS === bulan;
-      var matchTahun = !tahun || String(item.tahunKeRS) === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || item.bulanKeRS === bulan) && (!tahun || String(item.tahunKeRS) === tahun);
     });
     state.filteredData.RabiesPasien = filtered;
     state.rabiesDataFiltered = filtered;
@@ -1612,11 +1632,7 @@
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextSusu, 'Susu Stunting', 'namaPasien');
-      });
+      btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextSusu, 'Susu Stunting', 'namaPasien'); });
     });
   }
 
@@ -1627,9 +1643,7 @@
     var list = state.data.Susu || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasien||'').toLowerCase().indexOf(q)>-1;
-      var matchBulan = !bulan || item.bulan === bulan;
-      var matchTahun = !tahun || String(item.tahun) === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || item.bulan === bulan) && (!tahun || String(item.tahun) === tahun);
     });
     state.filteredData.Susu = filtered;
     renderSusuLaporan(filtered);
@@ -1692,11 +1706,7 @@
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextCobra, 'Gigitan Cobra', 'namaPasien');
-      });
+      btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextCobra, 'Gigitan Cobra', 'namaPasien'); });
     });
   }
 
@@ -1707,9 +1717,7 @@
     var list = state.data.Cobra || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasien||'').toLowerCase().indexOf(q)>-1;
-      var matchBulan = !bulan || item.bulan === bulan;
-      var matchTahun = !tahun || String(item.tahun) === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || item.bulan === bulan) && (!tahun || String(item.tahun) === tahun);
     });
     state.filteredData.Cobra = filtered;
     renderCobraLaporan(filtered);
@@ -1767,11 +1775,7 @@
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(btn.dataset.idx);
-        var item = list[idx];
-        openNoteModal(item, buildCatatanTextDifteri, 'Difteri', 'namaPasien');
-      });
+      btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextDifteri, 'Difteri', 'namaPasien'); });
     });
   }
 
@@ -1782,9 +1786,7 @@
     var list = state.data.Difteri || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasien||'').toLowerCase().indexOf(q)>-1;
-      var matchBulan = !bulan || item.bulan === bulan;
-      var matchTahun = !tahun || String(item.tahun) === tahun;
-      return matchQ && matchBulan && matchTahun;
+      return matchQ && (!bulan || item.bulan === bulan) && (!tahun || String(item.tahun) === tahun);
     });
     state.filteredData.Difteri = filtered;
     renderDifteriLaporan(filtered);
@@ -2084,9 +2086,7 @@
             showMsg('msgSetting', 'Error: ' + result.message, 'err');
           }
         })
-        .catch(function(err) {
-          showMsg('msgSetting', '❌ Gagal: ' + err.message, 'err');
-        });
+        .catch(function(err) { showMsg('msgSetting', '❌ Gagal: ' + err.message, 'err'); });
     });
   }
 
@@ -2509,7 +2509,7 @@
   // =================================================================
   // DASHBOARD – GRAFIK
   // =================================================================
-  var COLORS = ['#0f6b52','#2a9d8f','#e9c46a','#f4a261','#e76f51','#264653','#8ecae6','#ffb703'];
+  var COLORS = ['#0f6b52','#e63946','#f4a261','#2a9d8f','#8338ec','#ff006e','#3a86ff','#fb5607'];
 
   function groupDataByMonth(data, dateField, categoryField) {
     var result = {};
@@ -2519,9 +2519,7 @@
       var bt = hitungBulanTahun(dateVal);
       if (!bt.bulan || !bt.tahun) return;
       var key = bt.tahun + '-' + bt.bulan;
-      if (!result[key]) {
-        result[key] = { tahun: bt.tahun, bulan: bt.bulan, count: {}, total: 0 };
-      }
+      if (!result[key]) result[key] = { tahun: bt.tahun, bulan: bt.bulan, count: {}, total: 0 };
       var cat = item[categoryField] || 'Tidak diketahui';
       if (!result[key].count[cat]) result[key].count[cat] = 0;
       result[key].count[cat] += 1;
@@ -2538,9 +2536,7 @@
       var bt = hitungBulanTahun(dateVal);
       if (!bt.bulan || !bt.tahun) return;
       var key = bt.tahun + '-' + bt.bulan;
-      if (!result[key]) {
-        result[key] = { tahun: bt.tahun, bulan: bt.bulan, count: 0 };
-      }
+      if (!result[key]) result[key] = { tahun: bt.tahun, bulan: bt.bulan, count: 0 };
       result[key].count += 1;
     });
     return result;
@@ -2609,10 +2605,19 @@
     var malariaCats = getUniqueCategories(malariaData, 'hasilMalaria');
     var malariaAllKeys = getAllMonthKeys(malariaData, 'tglKejadian');
     var malariaDatasets = malariaCats.map(function(cat, idx) {
-      var vals = malariaAllKeys.map(function(key) {
-        return (malariaGroup[key] && malariaGroup[key].count[cat]) ? malariaGroup[key].count[cat] : 0;
-      });
-      return { label: cat, data: vals, borderColor: COLORS[idx % COLORS.length], backgroundColor: 'transparent', tension: 0.2, fill: false };
+      return {
+        label: cat,
+        data: malariaAllKeys.map(function(key) {
+          return (malariaGroup[key] && malariaGroup[key].count[cat]) ? malariaGroup[key].count[cat] : 0;
+        }),
+        borderColor: COLORS[idx % COLORS.length],
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        tension: 0.25,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 7
+      };
     });
     chartConfigs.push({ id: 'chartMalaria', labels: malariaAllKeys, datasets: malariaDatasets });
 
@@ -2621,10 +2626,19 @@
     var labCats = getUniqueCategories(labData, 'hasilMikroskopis');
     var labAllKeys = getAllMonthKeys(labData, 'tglSDdiperiksa');
     var labDatasets = labCats.map(function(cat, idx) {
-      var vals = labAllKeys.map(function(key) {
-        return (labGroup[key] && labGroup[key].count[cat]) ? labGroup[key].count[cat] : 0;
-      });
-      return { label: cat, data: vals, borderColor: COLORS[(idx+2) % COLORS.length], backgroundColor: 'transparent', tension: 0.2, fill: false };
+      return {
+        label: cat,
+        data: labAllKeys.map(function(key) {
+          return (labGroup[key] && labGroup[key].count[cat]) ? labGroup[key].count[cat] : 0;
+        }),
+        borderColor: COLORS[(idx+1) % COLORS.length],
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        tension: 0.25,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 7
+      };
     });
     chartConfigs.push({ id: 'chartMalariaLab', labels: labAllKeys, datasets: labDatasets });
 
@@ -2633,10 +2647,19 @@
     var hyperCats = getUniqueCategories(hyperData, 'skriningAwal');
     var hyperAllKeys = getAllMonthKeys(hyperData, 'tglMelahirkan');
     var hyperDatasets = hyperCats.map(function(cat, idx) {
-      var vals = hyperAllKeys.map(function(key) {
-        return (hyperGroup[key] && hyperGroup[key].count[cat]) ? hyperGroup[key].count[cat] : 0;
-      });
-      return { label: cat, data: vals, borderColor: COLORS[(idx+4) % COLORS.length], backgroundColor: 'transparent', tension: 0.2, fill: false };
+      return {
+        label: cat,
+        data: hyperAllKeys.map(function(key) {
+          return (hyperGroup[key] && hyperGroup[key].count[cat]) ? hyperGroup[key].count[cat] : 0;
+        }),
+        borderColor: COLORS[(idx+3) % COLORS.length],
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        tension: 0.25,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 7
+      };
     });
     chartConfigs.push({ id: 'chartHyperhep', labels: hyperAllKeys, datasets: hyperDatasets });
 
@@ -2646,7 +2669,7 @@
     var tbDataset = [{
       label: 'Jumlah Pasien',
       data: tbAllKeys.map(function(key) { return tbGroup[key] ? tbGroup[key].count : 0; }),
-      borderColor: COLORS[6], backgroundColor: 'transparent', tension: 0.2, fill: false
+      borderColor: COLORS[0], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7
     }];
     chartConfigs.push({ id: 'chartTuberkulin', labels: tbAllKeys, datasets: tbDataset });
 
@@ -2655,10 +2678,19 @@
     var rabiesCats = getUniqueCategories(rabiesData, 'jenisHewan');
     var rabiesAllKeys = getAllMonthKeys(rabiesData, 'tglKeRS');
     var rabiesDatasets = rabiesCats.map(function(cat, idx) {
-      var vals = rabiesAllKeys.map(function(key) {
-        return (rabiesGroup[key] && rabiesGroup[key].count[cat]) ? rabiesGroup[key].count[cat] : 0;
-      });
-      return { label: cat, data: vals, borderColor: COLORS[(idx+1) % COLORS.length], backgroundColor: 'transparent', tension: 0.2, fill: false };
+      return {
+        label: cat,
+        data: rabiesAllKeys.map(function(key) {
+          return (rabiesGroup[key] && rabiesGroup[key].count[cat]) ? rabiesGroup[key].count[cat] : 0;
+        }),
+        borderColor: COLORS[(idx+2) % COLORS.length],
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        tension: 0.25,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 7
+      };
     });
     chartConfigs.push({ id: 'chartRabies', labels: rabiesAllKeys, datasets: rabiesDatasets });
 
@@ -2668,7 +2700,7 @@
     var susuDataset = [{
       label: 'Jumlah Pasien',
       data: susuAllKeys.map(function(key) { return susuGroup[key] ? susuGroup[key].count : 0; }),
-      borderColor: COLORS[3], backgroundColor: 'transparent', tension: 0.2, fill: false
+      borderColor: COLORS[3], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7
     }];
     chartConfigs.push({ id: 'chartSusu', labels: susuAllKeys, datasets: susuDataset });
 
@@ -2678,7 +2710,7 @@
     var cobraDataset = [{
       label: 'Jumlah Pasien',
       data: cobraAllKeys.map(function(key) { return cobraGroup[key] ? cobraGroup[key].count : 0; }),
-      borderColor: COLORS[4], backgroundColor: 'transparent', tension: 0.2, fill: false
+      borderColor: COLORS[4], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7
     }];
     chartConfigs.push({ id: 'chartCobra', labels: cobraAllKeys, datasets: cobraDataset });
 
@@ -2688,9 +2720,19 @@
     var difteriDataset = [{
       label: 'Jumlah Pasien',
       data: difteriAllKeys.map(function(key) { return difteriGroup[key] ? difteriGroup[key].count : 0; }),
-      borderColor: COLORS[5], backgroundColor: 'transparent', tension: 0.2, fill: false
+      borderColor: COLORS[5], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7
     }];
     chartConfigs.push({ id: 'chartDifteri', labels: difteriAllKeys, datasets: difteriDataset });
+
+    // Hitung grand total per chart
+    var grandTotals = {};
+    chartConfigs.forEach(function(cfg) {
+      var total = 0;
+      cfg.datasets.forEach(function(ds) {
+        ds.data.forEach(function(v) { total += (v || 0); });
+      });
+      grandTotals[cfg.id] = total;
+    });
 
     chartConfigs.forEach(function(cfg) {
       var canvas = document.getElementById(cfg.id);
@@ -2699,6 +2741,41 @@
         state.charts[cfg.id].destroy();
         delete state.charts[cfg.id];
       }
+
+      // Tambahkan total ke header + hint + tombol close
+      var card = canvas.closest('.chart-card');
+      if (card) {
+        var h4 = card.querySelector('h4');
+        if (h4) {
+          var existingTotal = h4.querySelector('.chart-total');
+          if (existingTotal) {
+            existingTotal.textContent = 'Total: ' + grandTotals[cfg.id];
+          } else {
+            var totalSpan = document.createElement('span');
+            totalSpan.className = 'chart-total';
+            totalSpan.textContent = 'Total: ' + grandTotals[cfg.id];
+            h4.appendChild(totalSpan);
+          }
+        }
+        if (!card.querySelector('.chart-hint')) {
+          var hint = document.createElement('div');
+          hint.className = 'chart-hint';
+          hint.textContent = '🔍 Klik untuk perbesar';
+          card.appendChild(hint);
+        }
+        if (!card.querySelector('.chart-close-btn')) {
+          var closeBtn = document.createElement('button');
+          closeBtn.className = 'chart-close-btn';
+          closeBtn.innerHTML = '&times;';
+          closeBtn.title = 'Tutup (Esc)';
+          closeBtn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            collapseChart(card);
+          });
+          card.appendChild(closeBtn);
+        }
+      }
+
       var ctx = canvas.getContext('2d');
       state.charts[cfg.id] = new Chart(ctx, {
         type: 'line',
@@ -2711,19 +2788,105 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 6, font: { size: 9 } } }
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 14,
+                padding: 10,
+                font: { size: 11, weight: '500' },
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15,107,82,0.95)',
+              titleFont: { size: 13, weight: 'bold' },
+              bodyFont: { size: 12 },
+              padding: 10,
+              cornerRadius: 6,
+              displayColors: true
+            }
           },
           scales: {
-            y: { beginAtZero: true, ticks: { font: { size: 8 } } },
-            x: { ticks: { font: { size: 8 } } }
+            y: {
+              beginAtZero: true,
+              ticks: { font: { size: 10 }, precision: 0 },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+              ticks: {
+                font: { size: 10 },
+                maxRotation: 45,
+                minRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 12
+              },
+              grid: { display: false }
+            }
           }
         }
       });
     });
     document.getElementById('emptyDashboard').style.display = 'none';
     document.getElementById('dashboardGrid').style.display = 'grid';
+  }
+
+  // === REVISI DASHBOARD: fungsi expand/collapse ===
+  function expandChart(card) {
+    if (!card) return;
+    document.querySelectorAll('.chart-card.expanded').forEach(function(c) {
+      if (c !== card) collapseChart(c);
+    });
+    card.classList.add('expanded');
+    var backdrop = document.getElementById('dashboardBackdrop');
+    if (backdrop) backdrop.classList.add('active');
+    var canvas = card.querySelector('canvas');
+    if (canvas && state.charts[canvas.id]) {
+      setTimeout(function() { state.charts[canvas.id].resize(); }, 80);
+    }
+  }
+
+  function collapseChart(card) {
+    if (!card) return;
+    card.classList.remove('expanded');
+    var backdrop = document.getElementById('dashboardBackdrop');
+    if (backdrop) backdrop.classList.remove('active');
+    var canvas = card.querySelector('canvas');
+    if (canvas && state.charts[canvas.id]) {
+      setTimeout(function() { state.charts[canvas.id].resize(); }, 80);
+    }
+  }
+
+  function initChartExpand() {
+    var grid = document.getElementById('dashboardGrid');
+    if (!grid) return;
+
+    grid.addEventListener('click', function(ev) {
+      if (ev.target.classList.contains('chart-close-btn')) return;
+      var card = ev.target.closest('.chart-card');
+      if (!card) return;
+
+      if (card.classList.contains('expanded')) {
+        collapseChart(card);
+      } else {
+        expandChart(card);
+      }
+    });
+
+    var backdrop = document.getElementById('dashboardBackdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', function() {
+        document.querySelectorAll('.chart-card.expanded').forEach(collapseChart);
+      });
+    }
+
+    document.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Escape') {
+        document.querySelectorAll('.chart-card.expanded').forEach(collapseChart);
+      }
+    });
   }
 
   function loadDashboardData() {
@@ -3116,7 +3279,6 @@
     initFormCobra();
     initFormDifteri();
 
-    // Refresh events
     document.getElementById('btnRefresh').addEventListener('click', refreshLaporan);
     document.getElementById('btnRefreshMalariaLabLaporan').addEventListener('click', refreshMalariaLabLaporan);
     document.getElementById('btnRefreshStok').addEventListener('click', refreshHyperhepStok);
@@ -3128,7 +3290,6 @@
     document.getElementById('btnRefreshCobra').addEventListener('click', refreshCobra);
     document.getElementById('btnRefreshDifteri').addEventListener('click', refreshDifteri);
 
-    // Filter events
     document.getElementById('searchBox').addEventListener('input', applyFilter);
     document.getElementById('filterBulanMalaria').addEventListener('change', applyFilter);
     document.getElementById('filterTahunMalaria').addEventListener('change', applyFilter);
@@ -3154,49 +3315,47 @@
     document.getElementById('filterBulanDifteri').addEventListener('change', applyFilterDifteri);
     document.getElementById('filterTahunDifteri').addEventListener('change', applyFilterDifteri);
 
-    // Export Excel
     document.getElementById('btnExportExcelMalaria').addEventListener('click', function() {
-      var list = state.filteredData.Malaria || state.data.Malaria || [];
-      var columns = { 'namaPasien':'Nama','umur':'Umur','noReg':'No.Reg','noTelp':'No HP','hasilMalaria':'Hasil','derajatMalaria':'Derajat','tglKejadian':'Tgl Kejadian','faskes':'FASKES' };
-      exportToExcel(list, columns, 'Malaria', 'Malaria');
+      exportToExcel(state.filteredData.Malaria || state.data.Malaria || [],
+        { 'namaPasien':'Nama','umur':'Umur','noReg':'No.Reg','noTelp':'No HP','hasilMalaria':'Hasil','derajatMalaria':'Derajat','tglKejadian':'Tgl Kejadian','faskes':'FASKES' },
+        'Malaria', 'Malaria');
     });
     document.getElementById('btnExportExcelMalariaLab').addEventListener('click', function() {
-      var list = state.malariaLabDataFiltered || state.data.MalariaLab || [];
-      var columns = { 'noRegLab':'No.Reg','namaPasienLab':'Nama','jenisKelamin':'JK','tglLahirLab':'Tgl Lahir','usiaLab':'Usia','alamatLengkapLab':'Alamat','metodePemeriksaan':'Metode','alasanPemeriksaan':'Alasan','hasilMikroskopis':'Hasil','gametosit':'Gametosit','kepadatanParasit':'Kepadatan','kodeSlide':'Kode Slide','tglSDdiperiksa':'Tgl SD','bulanLab':'Bulan','tahunLab':'Tahun' };
-      exportToExcel(list, columns, 'Malaria Lab', 'MalariaLab');
+      exportToExcel(state.malariaLabDataFiltered || state.data.MalariaLab || [],
+        { 'noRegLab':'No.Reg','namaPasienLab':'Nama','jenisKelamin':'JK','tglLahirLab':'Tgl Lahir','usiaLab':'Usia','alamatLengkapLab':'Alamat','metodePemeriksaan':'Metode','alasanPemeriksaan':'Alasan','hasilMikroskopis':'Hasil','gametosit':'Gametosit','kepadatanParasit':'Kepadatan','kodeSlide':'Kode Slide','tglSDdiperiksa':'Tgl SD','bulanLab':'Bulan','tahunLab':'Tahun' },
+        'Malaria Lab', 'MalariaLab');
     });
     document.getElementById('btnExportExcelHyperhep').addEventListener('click', function() {
-      var list = state.filteredData.HyperhepPasien || state.data.HyperhepPasien || [];
-      var columns = { 'namaBayi':'Bayi','namaIbu':'Ibu','nikIbu':'NIK','noHp':'HP','jumlahAnak':'Jml Anak','tglHBIG':'HBIG','jamHBIG':'Jam HBIG','tglHB0':'HB0','jamHB0':'Jam HB0','skriningAwal':'Skrining' };
-      exportToExcel(list, columns, 'Hyperhep', 'Hyperhep');
+      exportToExcel(state.filteredData.HyperhepPasien || state.data.HyperhepPasien || [],
+        { 'namaBayi':'Bayi','namaIbu':'Ibu','nikIbu':'NIK','noHp':'HP','jumlahAnak':'Jml Anak','tglHBIG':'HBIG','jamHBIG':'Jam HBIG','tglHB0':'HB0','jamHB0':'Jam HB0','skriningAwal':'Skrining' },
+        'Hyperhep', 'Hyperhep');
     });
     document.getElementById('btnExportExcelTuberkulin').addEventListener('click', function() {
-      var list = state.filteredData.Tuberkulin || state.data.Tuberkulin || [];
-      var columns = { 'namaPasien':'Nama','tglLahir':'Tgl Lahir','umur':'Umur','noHpOrtu':'HP Ortu','tglPemberianObat':'Tgl Pemberian','bulanPemberian':'Bulan','tahunPemberian':'Tahun' };
-      exportToExcel(list, columns, 'Tuberkulin', 'Tuberkulin');
+      exportToExcel(state.filteredData.Tuberkulin || state.data.Tuberkulin || [],
+        { 'namaPasien':'Nama','tglLahir':'Tgl Lahir','umur':'Umur','noHpOrtu':'HP Ortu','tglPemberianObat':'Tgl Pemberian','bulanPemberian':'Bulan','tahunPemberian':'Tahun' },
+        'Tuberkulin', 'Tuberkulin');
     });
     document.getElementById('btnExportExcelRabies').addEventListener('click', function() {
-      var list = state.rabiesDataFiltered || state.data.RabiesPasien || [];
-      var columns = { 'noReg':'No.Reg','namaPasien':'Nama','nikKtp':'NIK','tglLahir':'Tgl Lahir','umur':'Umur','noHp':'HP','alamatKtp':'Alamat','vaksinKe':'Vaksin','puskesmasRujukan':'Puskesmas','jenisHewan':'Hewan','lokasiGigitan':'Lokasi','tglDigigit':'Tgl Digigit','tglKeRS':'Tgl ke RS','tglCuciLuka':'Cuci Luka','tglVaksin':'Tgl Vaksin','bulanKeRS':'Bulan','tahunKeRS':'Tahun','jumlahVialRabies':'Vial' };
-      exportToExcel(list, columns, 'Rabies', 'Rabies');
+      exportToExcel(state.rabiesDataFiltered || state.data.RabiesPasien || [],
+        { 'noReg':'No.Reg','namaPasien':'Nama','nikKtp':'NIK','tglLahir':'Tgl Lahir','umur':'Umur','noHp':'HP','alamatKtp':'Alamat','vaksinKe':'Vaksin','puskesmasRujukan':'Puskesmas','jenisHewan':'Hewan','lokasiGigitan':'Lokasi','tglDigigit':'Tgl Digigit','tglKeRS':'Tgl ke RS','tglCuciLuka':'Cuci Luka','tglVaksin':'Tgl Vaksin','bulanKeRS':'Bulan','tahunKeRS':'Tahun','jumlahVialRabies':'Vial' },
+        'Rabies', 'Rabies');
     });
     document.getElementById('btnExportExcelSusu').addEventListener('click', function() {
-      var list = state.filteredData.Susu || state.data.Susu || [];
-      var columns = { 'tanggalInputLaporan':'Tgl Input','tanggalResep':'Tgl Resep','namaPasien':'Nama','tglLahir':'Tgl Lahir','umur':'Umur','namaOrtu':'Ortu','alamatRumah':'Alamat','noHp':'HP','namaProduk':'Produk','jumlah':'Jumlah','diagnosa':'Diagnosa','dokter':'Dokter','beratBadan':'BB','bulan':'Bulan','tahun':'Tahun' };
-      exportToExcel(list, columns, 'Susu Stunting', 'Susu');
+      exportToExcel(state.filteredData.Susu || state.data.Susu || [],
+        { 'tanggalInputLaporan':'Tgl Input','tanggalResep':'Tgl Resep','namaPasien':'Nama','tglLahir':'Tgl Lahir','umur':'Umur','namaOrtu':'Ortu','alamatRumah':'Alamat','noHp':'HP','namaProduk':'Produk','jumlah':'Jumlah','diagnosa':'Diagnosa','dokter':'Dokter','beratBadan':'BB','bulan':'Bulan','tahun':'Tahun' },
+        'Susu Stunting', 'Susu');
     });
     document.getElementById('btnExportExcelCobra').addEventListener('click', function() {
-      var list = state.filteredData.Cobra || state.data.Cobra || [];
-      var columns = { 'tanggal':'Tanggal','namaPasien':'Nama','noKtp':'No.KTP','noReg':'No.Reg','noTelpon':'No.Telp','tglLahir':'Tgl Lahir','umur':'Umur','alamatKtp':'Alamat','puskesmasRujukan':'Puskesmas','tglDigigit':'Tgl Digigit','tglKeRS':'Tgl ke RS','jenisUlar':'Jenis Ular','lokasiGigitan':'Lokasi','cuciLuka':'Cuci Luka','tglSabu':'Tgl Sabu','keterangan':'Keterangan','jenisVaksin':'Vaksin','jumlahObat':'Jumlah Obat','bulan':'Bulan','tahun':'Tahun' };
-      exportToExcel(list, columns, 'Gigitan Cobra', 'Cobra');
+      exportToExcel(state.filteredData.Cobra || state.data.Cobra || [],
+        { 'tanggal':'Tanggal','namaPasien':'Nama','noKtp':'No.KTP','noReg':'No.Reg','noTelpon':'No.Telp','tglLahir':'Tgl Lahir','umur':'Umur','alamatKtp':'Alamat','puskesmasRujukan':'Puskesmas','tglDigigit':'Tgl Digigit','tglKeRS':'Tgl ke RS','jenisUlar':'Jenis Ular','lokasiGigitan':'Lokasi','cuciLuka':'Cuci Luka','tglSabu':'Tgl Sabu','keterangan':'Keterangan','jenisVaksin':'Vaksin','jumlahObat':'Jumlah Obat','bulan':'Bulan','tahun':'Tahun' },
+        'Gigitan Cobra', 'Cobra');
     });
     document.getElementById('btnExportExcelDifteri').addEventListener('click', function() {
-      var list = state.filteredData.Difteri || state.data.Difteri || [];
-      var columns = { 'tanggal':'Tanggal','namaPasien':'Nama','noKtp':'No.KTP','noReg':'No.Reg','noTelpon':'No.Telp','tglLahir':'Tgl Lahir','umur':'Umur','alamatKtp':'Alamat','puskesmasRujukan':'Puskesmas','tglKeRS':'Tgl ke RS','tglVaksin':'Tgl Vaksin','keterangan':'Keterangan','jumlahObat':'Jumlah Obat','bulan':'Bulan','tahun':'Tahun' };
-      exportToExcel(list, columns, 'Difteri', 'Difteri');
+      exportToExcel(state.filteredData.Difteri || state.data.Difteri || [],
+        { 'tanggal':'Tanggal','namaPasien':'Nama','noKtp':'No.KTP','noReg':'No.Reg','noTelpon':'No.Telp','tglLahir':'Tgl Lahir','umur':'Umur','alamatKtp':'Alamat','puskesmasRujukan':'Puskesmas','tglKeRS':'Tgl ke RS','tglVaksin':'Tgl Vaksin','keterangan':'Keterangan','jumlahObat':'Jumlah Obat','bulan':'Bulan','tahun':'Tahun' },
+        'Difteri', 'Difteri');
     });
 
-    // Print Preview
     document.querySelectorAll('.print-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var program = btn.dataset.program;
@@ -3209,6 +3368,7 @@
     });
 
     initSidebarNavigation();
+    initChartExpand();  // === REVISI DASHBOARD ===
 
     document.getElementById('btnRefreshDashboard').addEventListener('click', function() {
       var sheets = ['Malaria', 'MalariaLab', 'HyperhepPasien', 'Tuberkulin', 'RabiesPasien', 'Susu', 'Cobra', 'Difteri'];
