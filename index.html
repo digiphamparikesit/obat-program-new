@@ -879,7 +879,12 @@
   }
   function escapeHtml(str){
     if (str === null || str === undefined) return '';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    var s = String(str);
+    // Auto-strip jam dari ISO timestamp: "2026-09-06T16:00:00.000Z" → "2026-09-06"
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(s)) {
+      s = s.split('T')[0];
+    }
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   function hitungUmur(tglLahirStr){
