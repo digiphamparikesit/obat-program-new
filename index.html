@@ -831,7 +831,18 @@
 
   var SKIP_FIELDS = ['_target', '_rowIndex', '_id', 'id', 'created_at', 'rowIndex'];
 
+  // === Override untuk field yang regex biasa gagal konversi ===
+  var COLUMN_OVERRIDES = {
+    'tglSDdiperiksa': 'tgl_sd_diperiksa',
+    'tglHBIG': 'tgl_hbig',
+    'jamHBIG': 'jam_hbig',
+    'tglHB0': 'tgl_hb0',
+    'jamHB0': 'jam_hb0',
+    'jumlahVialHBIG': 'jumlah_vial_hbig'
+  };
+
   function camelToSnake(str) {
+    if (COLUMN_OVERRIDES[str]) return COLUMN_OVERRIDES[str];
     return str.replace(/[A-Z]/g, function(l) { return '_' + l.toLowerCase(); });
   }
   function snakeToCamel(str) {
