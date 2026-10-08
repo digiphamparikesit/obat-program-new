@@ -832,13 +832,17 @@
   var SKIP_FIELDS = ['_target', '_rowIndex', '_id', 'id', 'created_at', 'rowIndex'];
 
   // === Override untuk field yang regex biasa gagal konversi ===
-  var COLUMN_OVERRIDES = {
+ var COLUMN_OVERRIDES = {
     'tglSDdiperiksa': 'tgl_sd_diperiksa',
     'tglHBIG': 'tgl_hbig',
     'jamHBIG': 'jam_hbig',
     'tglHB0': 'tgl_hb0',
     'jamHB0': 'jam_hb0',
-    'jumlahVialHBIG': 'jumlah_vial_hbig'
+    'jumlahVialHBIG': 'jumlah_vial_hbig',
+    'alamatKTP': 'alamat_ktp',
+    'nikKtp': 'nik_ktp',
+    'alamatKtp': 'alamat_ktp',
+    'noKtp': 'no_ktp'
   };
 
   function camelToSnake(str) {
@@ -1610,7 +1614,16 @@
     fillField('elGametosit', item.gametosit);
     fillField('elKepadatan', item.kepadatanParasit);
     fillField('elKodeSlide', item.kodeSlide);
-    fillField('elTglSD', trimTime(item.tglSDdiperiksa));
+    // === FIX: Kalau Tgl SD kosong, rekonstruksi dari Bulan + Tahun ===
+    var tglSDVal = trimTime(item.tglSDdiperiksa);
+    if (!tglSDVal && item.bulanLab && item.tahunLab) {
+      var bulanIdx = NAMA_BULAN.indexOf(item.bulanLab);
+      if (bulanIdx > -1) {
+        var mm = String(bulanIdx + 1).padStart(2, '0');
+        tglSDVal = item.tahunLab + '-' + mm + '-01';
+      }
+    }
+    fillField('elTglSD', tglSDVal);
     fillField('elBulan', item.bulanLab);
     fillField('elTahun', item.tahunLab);
     fillField('elRowIndex', item.id);
