@@ -481,7 +481,7 @@ fieldset > .grid{
           <button class="btn btn-primary" id="btnExportExcelMalaria">📊 Excel</button>
           <button class="btn btn-secondary print-btn" data-program="Malaria">🖨️ Print</button>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Umur</th><th>No.Reg</th><th>No HP</th><th>Hasil</th><th>Derajat</th><th>Tgl Kejadian</th><th>FASKES</th><th>Aksi</th></tr></thead><tbody id="bodyLaporan"></tbody></table><div id="emptyState" class="empty-state">Belum ada data</div></div>
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Umur</th><th>No.Reg</th><th>No HP</th><th>NIK KTP</th><th>Hasil</th><th>Derajat</th><th>Tgl Kejadian</th><th>FASKES</th><th>Aksi</th></tr></thead><tbody id="bodyLaporan"></tbody></table><div id="emptyState" class="empty-state">Belum ada data</div></div>
       </div>
     </div>
 
@@ -3614,7 +3614,7 @@ fieldset > .grid{
 
   window.getColumnsForProgram = function(program) {
     var map = {
-      'Malaria': { 'namaPasien':'Nama','umur':'Umur','noReg':'No.Reg','noTelp':'No HP','hasilMalaria':'Hasil','derajatMalaria':'Derajat','tglKejadian':'Tgl Kejadian','faskes':'FASKES' },
+      'Malaria': { 'namaPasien':'Nama','umur':'Umur','noReg':'No.Reg','noTelp':'No HP','nikKtp':'NIK KTP','hasilMalaria':'Hasil','derajatMalaria':'Derajat','tglKejadian':'Tgl Kejadian','faskes':'FASKES' },
       'MalariaLab': { 'noRegLab':'No.Reg','namaPasienLab':'Nama','jenisKelamin':'JK','tglLahirLab':'Tgl Lahir','usiaLab':'Usia','alamatLengkapLab':'Alamat','metodePemeriksaan':'Metode','alasanPemeriksaan':'Alasan','hasilMikroskopis':'Hasil','gametosit':'Gametosit','kepadatanParasit':'Kepadatan','kodeSlide':'Kode Slide','tglSDdiperiksa':'Tgl SD','bulanLab':'Bulan','tahunLab':'Tahun' },
       'HyperhepPasien': { 'namaBayi':'Bayi','namaIbu':'Ibu','nikIbu':'NIK','noHp':'HP','jumlahAnak':'Jml Anak','tglHBIG':'HBIG','jamHBIG':'Jam HBIG','tglHB0':'HB0','jamHB0':'Jam HB0','skriningAwal':'Skrining' },
       'Tuberkulin': { 'namaPasien':'Nama','tglLahir':'Tgl Lahir','umur':'Umur','noHpOrtu':'HP Ortu','tglPemberianObat':'Tgl Pemberian','bulanPemberian':'Bulan','tahunPemberian':'Tahun' },
@@ -3679,7 +3679,7 @@ fieldset > .grid{
 
     document.getElementById('btnExportExcelMalaria').addEventListener('click', function() {
       exportToExcel(state.filteredData.Malaria || state.data.Malaria || [],
-        { 'namaPasien':'Nama','umur':'Umur','noReg':'No.Reg','noTelp':'No HP','hasilMalaria':'Hasil','derajatMalaria':'Derajat','tglKejadian':'Tgl Kejadian','faskes':'FASKES' }, 'Malaria', 'Malaria');
+        { 'namaPasien':'Nama','umur':'Umur','noReg':'No.Reg','noTelp':'No HP','nikKtp':'NIK KTP','hasilMalaria':'Hasil','derajatMalaria':'Derajat','tglKejadian':'Tgl Kejadian','faskes':'FASKES' }, 'Malaria', 'Malaria');
     });
     document.getElementById('btnExportExcelMalariaLab').addEventListener('click', function() {
       exportToExcel(state.malariaLabDataFiltered || state.data.MalariaLab || [],
