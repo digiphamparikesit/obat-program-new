@@ -833,15 +833,28 @@
 
   // === Override untuk field yang regex biasa gagal konversi ===
  var COLUMN_OVERRIDES = {
+    // Malaria
+    'tglIGD': 'tgl_igd',
+    'alamatKTP': 'alamat_ktp',
+    
+    // Malaria Lab
     'tglSDdiperiksa': 'tgl_sd_diperiksa',
+    
+    // Hyperhep
     'tglHBIG': 'tgl_hbig',
     'jamHBIG': 'jam_hbig',
     'tglHB0': 'tgl_hb0',
     'jamHB0': 'jam_hb0',
     'jumlahVialHBIG': 'jumlah_vial_hbig',
-    'alamatKTP': 'alamat_ktp',
+    
+    // Rabies
     'nikKtp': 'nik_ktp',
     'alamatKtp': 'alamat_ktp',
+    'tglKeRS': 'tgl_ke_rs',
+    'bulanKeRS': 'bulan_ke_rs',
+    'tahunKeRS': 'tahun_ke_rs',
+    
+    // Cobra & Difteri
     'noKtp': 'no_ktp'
   };
 
