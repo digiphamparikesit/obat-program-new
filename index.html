@@ -1668,13 +1668,21 @@
         '<td>' + escapeHtml(item.kodeSlide) + '</td>' +
         '<td>' + escapeHtml(item.tglSDdiperiksa) + '</td>' +
         '<td>' + escapeHtml(item.bulanLab) + '</td>' +
-        '<td>' + escapeHtml(item.tahunLab) + '</td>' +
-        '<td><button class="btn btn-secondary note-btn" data-idx="' + idx + '">📋</button></td>';
+        ''<td>' + escapeHtml(item.tahunLab) + '</td>' +
+        '<td>' +
+          '<button class="btn btn-secondary note-btn" data-idx="' + idx + '" title="Catatan">📋</button> ' +
+          '<button class="btn btn-secondary edit-lab-btn" data-idx="' + idx + '" title="Edit Data">✏️</button>' +
+        '</td>';
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextMalariaLab, 'Malaria Lab', 'namaPasienLab');
+      });
+    });
+    tbody.querySelectorAll('.edit-lab-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        openEditMalariaLabModal(list[parseInt(btn.dataset.idx)]);
       });
     });
   }
