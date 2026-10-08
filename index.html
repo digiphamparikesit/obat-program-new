@@ -1122,6 +1122,41 @@ fieldset > .grid{
       .catch(function(err) { return { status: 'error', message: err.message }; });
   }
 
+  
+  // =================================================================
+  // DELETE DATA
+  // =================================================================
+  function deleteFromSheet(sheetName, id) {
+    var tableName = TABLE_MAP[sheetName];
+    if (!tableName) return Promise.resolve({ status: 'error', message: 'Tabel tidak dikenal: ' + sheetName });
+    if (!id) return Promise.resolve({ status: 'error', message: 'ID tidak valid' });
+    return supabaseClient.from(tableName).delete().eq('id', id)
+      .then(function(res) {
+        if (res.error) return { status: 'error', message: res.error.message };
+        state.cache[sheetName] = null;
+        return { status: 'success', message: 'Data dihapus' };
+      })
+      .catch(function(err) { return { status: 'error', message: err.message }; });
+  }
+
+  // Handler delete dengan konfirmasi
+  function handleDelete(sheetName, item, refreshFn) {
+    if (!item || !item.id) { alert('Data tidak valid.'); return; }
+    var nama = item.namaPasien || item.namaPasienLab || item.namaBayi || '(tanpa nama)';
+    var info = 'Yakin hapus data berikut?\n\n' +
+               'Nama    : ' + nama + '\n' +
+               'No. Reg : ' + (item.noReg || item.noRegLab || '-') + '\n\n' +
+               '⚠️ Tindakan ini TIDAK BISA dibatalkan!';
+    if (!confirm(info)) return;
+    deleteFromSheet(sheetName, item.id).then(function(json) {
+      if (json.status === 'success') {
+        alert('✅ Data berhasil dihapus.');
+        if (typeof refreshFn === 'function') refreshFn();
+      } else {
+        alert('❌ Gagal menghapus: ' + (json.message || 'Error tidak diketahui'));
+      }
+    });
+  }
   // =================================================================
   // REALTIME SUBSCRIPTION
   // =================================================================
@@ -1830,8 +1865,10 @@ fieldset > .grid{
         '<td>' + escapeHtml(item.tglKejadian) + '</td>' +
         '<td>' + escapeHtml(item.faskes) + '</td>' +
         '<td>' +
+          '<td>' +
           '<button class="btn btn-secondary note-btn" data-idx="' + idx + '" title="Catatan">📋</button> ' +
-          '<button class="btn btn-secondary edit-malaria-btn" data-idx="' + idx + '" title="Edit Data">✏️</button>' +
+          '<button class="btn btn-secondary edit-malaria-btn" data-idx="' + idx + '" title="Edit Data">✏️</button> ' +
+          '<button class="btn btn-secondary delete-malaria-btn" data-idx="' + idx + '" title="Hapus Data">🗑️</button>' +
         '</td>';
       tbody.appendChild(tr);
     });
@@ -1843,6 +1880,11 @@ fieldset > .grid{
     tbody.querySelectorAll('.edit-malaria-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         openEditMalariaModal(list[parseInt(btn.dataset.idx)]);
+      });
+    });
+    tbody.querySelectorAll('.delete-malaria-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        handleDelete('Malaria', list[parseInt(btn.dataset.idx)], refreshLaporan);
       });
     });
   }
