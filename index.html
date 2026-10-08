@@ -1427,6 +1427,136 @@
       .catch(function(err){ showMsg('editMalariaMsg', 'Gagal: ' + err.message, 'err'); })
       .then(function(){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan'; });
   }
+
+    // =================================================================
+  // EDIT DATA RABIES
+  // =================================================================
+  var currentEditRabiesItem = null;
+
+  function openEditRabiesModal(item) {
+    if (!item || !item.id) { alert('Data tidak valid untuk diedit.'); return; }
+    currentEditRabiesItem = item;
+    var overlay = document.getElementById('editRabiesModalOverlay');
+    if (!overlay) {
+      var modalHtml = `
+        <div id="editRabiesModalOverlay" class="modal-overlay" style="display:flex;">
+          <div class="modal-box" style="max-width:750px;">
+            <div class="modal-head"><h3>✏️ Edit Data Pasien Rabies</h3><button id="btnCloseEditRabiesModal" class="btn-close">&times;</button></div>
+            <div id="editRabiesMsg" class="msg"></div>
+            <form id="formEditRabies" autocomplete="off">
+              <div class="grid">
+                <div class="field"><label class="required">No.Reg</label><input type="text" name="noReg" id="erNoReg" required></div>
+                <div class="field"><label class="required">Nama</label><input type="text" name="namaPasien" id="erNama" required></div>
+                <div class="field"><label>NIK</label><input type="text" name="nikKtp" id="erNik" maxlength="16"></div>
+                <div class="field"><label>Tgl Lahir</label><input type="date" name="tglLahir" id="erTglLahir"></div>
+                <div class="field"><label>Umur</label><input type="text" name="umur" id="erUmur" readonly></div>
+                <div class="field"><label>No HP</label><input type="text" name="noHp" id="erNoHp"></div>
+                <div class="field" style="grid-column:1/-1;"><label>Alamat</label><textarea name="alamatKtp" id="erAlamat"></textarea></div>
+                <div class="field"><label>Vaksin Ke-</label><select name="vaksinKe" id="erVaksinKe"><option value="">Vaksin Ke-</option><option>1</option><option>2</option><option>3</option></select></div>
+                <div class="field"><label>Jumlah Vial</label><input type="number" name="jumlahVialRabies" id="erVial" step="0.1" min="0"></div>
+                <div class="field"><label>Puskesmas</label><input type="text" name="puskesmasRujukan" id="erPuskesmas"></div>
+                <div class="field"><label>Jenis Hewan</label><select name="jenisHewan" id="erHewan"><option value="">Hewan</option><option>Anjing</option><option>Kucing</option><option>Kera</option></select></div>
+                <div class="field"><label>Lokasi Gigitan</label><input type="text" name="lokasiGigitan" id="erLokasi"></div>
+              </div>
+              <fieldset><legend>Kronologi</legend>
+                <div class="grid">
+                  <div class="field"><label>Tgl Digigit</label><input type="date" name="tglDigigit" id="erTglDigigit"></div>
+                  <div class="field"><label>Tgl ke RS</label><input type="date" name="tglKeRS" id="erTglKeRS"></div>
+                  <div class="field"><label>Tgl Cuci Luka</label><input type="date" name="tglCuciLuka" id="erTglCuci"></div>
+                  <div class="field"><label>Tgl Vaksin</label><input type="date" name="tglVaksin" id="erTglVaksin"></div>
+                  <div class="field"><label>Bulan</label><input type="text" name="bulanKeRS" id="erBulan" readonly></div>
+                  <div class="field"><label>Tahun</label><input type="text" name="tahunKeRS" id="erTahun" readonly></div>
+                </div>
+              </fieldset>
+              <input type="hidden" name="_rowIndex" id="erRowIndex">
+              <div class="actions">
+                <button type="submit" class="btn btn-primary" id="btnSaveEditRabies">💾 Simpan Perubahan</button>
+                <button type="button" class="btn btn-secondary" id="btnCancelEditRabies">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      overlay = document.getElementById('editRabiesModalOverlay');
+      document.getElementById('btnCloseEditRabiesModal').addEventListener('click', closeEditRabiesModal);
+      document.getElementById('btnCancelEditRabies').addEventListener('click', closeEditRabiesModal);
+      overlay.addEventListener('click', function(ev){ if (ev.target === overlay) closeEditRabiesModal(); });
+      document.getElementById('erTglLahir').addEventListener('change', function(){
+        document.getElementById('erUmur').value = hitungUmur(this.value);
+      });
+      document.getElementById('erTglKeRS').addEventListener('change', function(){
+        var bt = hitungBulanTahun(this.value);
+        document.getElementById('erBulan').value = bt.bulan;
+        document.getElementById('erTahun').value = bt.tahun;
+      });
+      document.getElementById('formEditRabies').addEventListener('submit', function(ev){
+        ev.preventDefault();
+        saveEditRabies();
+      });
+    }
+    function fillField(id, val){
+      var el = document.getElementById(id);
+      if (el) el.value = (val !== undefined && val !== null) ? val : '';
+    }
+    function trimTime(s){ return s ? String(s).split('T')[0] : ''; }
+    fillField('erNoReg', item.noReg);
+    fillField('erNama', item.namaPasien);
+    fillField('erNik', item.nikKtp);
+    fillField('erTglLahir', trimTime(item.tglLahir));
+    fillField('erUmur', item.umur);
+    fillField('erNoHp', item.noHp);
+    fillField('erAlamat', item.alamatKtp);
+    fillField('erVaksinKe', item.vaksinKe);
+    fillField('erVial', item.jumlahVialRabies);
+    fillField('erPuskesmas', item.puskesmasRujukan);
+    fillField('erHewan', item.jenisHewan);
+    fillField('erLokasi', item.lokasiGigitan);
+    fillField('erTglDigigit', trimTime(item.tglDigigit));
+    fillField('erTglKeRS', trimTime(item.tglKeRS));
+    fillField('erTglCuci', trimTime(item.tglCuciLuka));
+    fillField('erTglVaksin', trimTime(item.tglVaksin));
+    fillField('erBulan', item.bulanKeRS);
+    fillField('erTahun', item.tahunKeRS);
+    fillField('erRowIndex', item.id);
+    overlay.style.display = 'flex';
+    hideMsg('editRabiesMsg');
+  }
+
+  function closeEditRabiesModal(){
+    var overlay = document.getElementById('editRabiesModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+    currentEditRabiesItem = null;
+  }
+
+  function saveEditRabies(){
+    var form = document.getElementById('formEditRabies');
+    if (!form) return;
+    var payload = serializeForm(form);
+    if (!payload.noReg || !payload.namaPasien) {
+      showMsg('editRabiesMsg', 'No.Reg dan Nama wajib diisi.', 'err');
+      return;
+    }
+    var btn = document.getElementById('btnSaveEditRabies');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    payload._target = 'RabiesPasien';
+    putToSheet('RabiesPasien', payload)
+      .then(function(json){
+        if (json.status === 'success'){
+          showMsg('editRabiesMsg', 'Data berhasil diperbarui.', 'ok');
+          state.cache.RabiesPasien = null;
+          setTimeout(function(){
+            closeEditRabiesModal();
+            refreshRabiesLaporan();
+          }, 800);
+        } else {
+          showMsg('editRabiesMsg', 'Gagal memperbarui: ' + (json.message||''), 'err');
+        }
+      })
+      .catch(function(err){ showMsg('editRabiesMsg', 'Gagal: ' + err.message, 'err'); })
+      .then(function(){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan'; });
+  }
+
   function badgeHasil(hasil){
     if (!hasil) return '';
     var cls = 'falciparum';
@@ -1858,11 +1988,19 @@
         '<td>' + escapeHtml(item.bulanKeRS) + '</td>' +
         '<td>' + escapeHtml(item.tahunKeRS) + '</td>' +
         '<td>' + escapeHtml(item.jumlahVialRabies) + '</td>' +
-        '<td><button class="btn btn-secondary note-btn" data-idx="' + idx + '">📋</button></td>';
+        '<td>' +
+          '<button class="btn btn-secondary note-btn" data-idx="' + idx + '" title="Catatan">📋</button> ' +
+          '<button class="btn btn-secondary edit-rabies-btn" data-idx="' + idx + '" title="Edit Data">✏️</button>' +
+        '</td>';
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
       btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextRabies, 'Rabies', 'namaPasien'); });
+    });
+    tbody.querySelectorAll('.edit-rabies-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        openEditRabiesModal(list[parseInt(btn.dataset.idx)]);
+      });
     });
   }
 
