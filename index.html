@@ -440,6 +440,7 @@ fieldset > .grid{
             <div class="field"><label>Umur</label><input type="text" name="umur" id="umur" readonly></div>
             <div class="field"><label class="required">No.Reg</label><input type="text" name="noReg" required></div>
             <div class="field"><label>No HP</label><input type="text" name="noTelp"></div>
+            <div class="field"><label>NIK KTP</label><input type="text" name="nikKtp" maxlength="16"></div>
             <div class="field"><label>FASKES</label><input type="text" name="faskes"></div>
             <div class="field"><label>Alamat Domisili</label><textarea name="alamatDomisili"></textarea></div>
             <div class="field"><label>Alamat KTP</label><textarea name="alamatKTP"></textarea></div>
@@ -1397,6 +1398,7 @@ fieldset > .grid{
                 <div class="field"><label>Umur</label><input type="text" name="umur" id="emUmur" readonly></div>
                 <div class="field"><label class="required">No.Reg</label><input type="text" name="noReg" id="emNoReg" required></div>
                 <div class="field"><label>No HP</label><input type="text" name="noTelp" id="emNoTelp"></div>
+                <div class="field"><label>NIK KTP</label><input type="text" name="nikKtp" id="emNik" maxlength="16"></div>
                 <div class="field"><label>FASKES</label><input type="text" name="faskes" id="emFaskes"></div>
                 <div class="field" style="grid-column:1/-1;"><label>Alamat Domisili</label><textarea name="alamatDomisili" id="emAlamatDomisili"></textarea></div>
                 <div class="field" style="grid-column:1/-1;"><label>Alamat KTP</label><textarea name="alamatKTP" id="emAlamatKTP"></textarea></div>
@@ -1469,6 +1471,7 @@ fieldset > .grid{
     fillField('emUmur', item.umur);
     fillField('emNoReg', item.noReg);
     fillField('emNoTelp', item.noTelp);
+    fillField('emNik', item.nikKtp);
     fillField('emFaskes', item.faskes);
     fillField('emAlamatDomisili', item.alamatDomisili);
     fillField('emAlamatKTP', item.alamatKTP);
@@ -1821,6 +1824,7 @@ fieldset > .grid{
         '<td>' + escapeHtml(item.umur) + '</td>' +
         '<td>' + escapeHtml(item.noReg) + '</td>' +
         '<td>' + escapeHtml(item.noTelp) + '</td>' +
+        '<td>' + escapeHtml(item.nikKtp) + '</td>' +
         '<td>' + badgeHasil(item.hasilMalaria) + '</td>' +
         '<td>' + escapeHtml(item.derajatMalaria) + '</td>' +
         '<td>' + escapeHtml(item.tglKejadian) + '</td>' +
