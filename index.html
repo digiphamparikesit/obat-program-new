@@ -1529,6 +1529,129 @@
     currentEditRabiesItem = null;
   }
 
+    // =================================================================
+  // EDIT DATA MALARIA LAB
+  // =================================================================
+  var currentEditLabItem = null;
+
+  function openEditMalariaLabModal(item) {
+    if (!item || !item.id) { alert('Data tidak valid untuk diedit.'); return; }
+    currentEditLabItem = item;
+    var overlay = document.getElementById('editLabModalOverlay');
+    if (!overlay) {
+      var modalHtml = `
+        <div id="editLabModalOverlay" class="modal-overlay" style="display:flex;">
+          <div class="modal-box" style="max-width:700px;">
+            <div class="modal-head"><h3>✏️ Edit Data Lab Malaria</h3><button id="btnCloseEditLabModal" class="btn-close">&times;</button></div>
+            <div id="editLabMsg" class="msg"></div>
+            <form id="formEditMalariaLab" autocomplete="off">
+              <div class="grid">
+                <div class="field"><label class="required">No.Reg Lab</label><input type="text" name="noRegLab" id="elNoReg" required></div>
+                <div class="field"><label class="required">Nama</label><input type="text" name="namaPasienLab" id="elNama" required></div>
+                <div class="field"><label>JK</label><select name="jenisKelamin" id="elJK"><option value="">JK</option><option>Laki</option><option>Perempuan</option></select></div>
+                <div class="field"><label>Tgl Lahir</label><input type="date" name="tglLahirLab" id="elTglLahir"></div>
+                <div class="field"><label>Usia</label><input type="text" name="usiaLab" id="elUsia" readonly></div>
+                <div class="field" style="grid-column:1/-1;"><label>Alamat</label><textarea name="alamatLengkapLab" id="elAlamat"></textarea></div>
+                <div class="field"><label>Metode</label><input type="text" name="metodePemeriksaan" id="elMetode"></div>
+                <div class="field"><label>Alasan</label><input type="text" name="alasanPemeriksaan" id="elAlasan"></div>
+                <div class="field"><label>Hasil</label><select name="hasilMikroskopis" id="elHasil"><option value="">Hasil</option><option>Negatif</option><option>Positif Falciparum</option><option>Positif Vivax</option><option>Positif Mix</option></select></div>
+                <div class="field"><label>Gametosit</label><select name="gametosit" id="elGametosit"><option value="">Gametosit</option><option>Positif</option><option>Negatif</option></select></div>
+                <div class="field"><label>Kepadatan</label><input type="number" name="kepadatanParasit" id="elKepadatan"></div>
+                <div class="field"><label>Kode Slide</label><input type="text" name="kodeSlide" id="elKodeSlide"></div>
+              </div>
+              <fieldset><legend>Tgl SD Diperiksa</legend>
+                <div class="grid">
+                  <div class="field"><label class="required">Tgl SD</label><input type="date" name="tglSDdiperiksa" id="elTglSD" required></div>
+                  <div class="field"><label>Bulan</label><input type="text" name="bulanLab" id="elBulan" readonly></div>
+                  <div class="field"><label>Tahun</label><input type="text" name="tahunLab" id="elTahun" readonly></div>
+                </div>
+              </fieldset>
+              <input type="hidden" name="_rowIndex" id="elRowIndex">
+              <div class="actions">
+                <button type="submit" class="btn btn-primary" id="btnSaveEditLab">💾 Simpan Perubahan</button>
+                <button type="button" class="btn btn-secondary" id="btnCancelEditLab">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      overlay = document.getElementById('editLabModalOverlay');
+      document.getElementById('btnCloseEditLabModal').addEventListener('click', closeEditLabModal);
+      document.getElementById('btnCancelEditLab').addEventListener('click', closeEditLabModal);
+      overlay.addEventListener('click', function(ev){ if (ev.target === overlay) closeEditLabModal(); });
+      document.getElementById('elTglLahir').addEventListener('change', function(){
+        document.getElementById('elUsia').value = hitungUmur(this.value);
+      });
+      document.getElementById('elTglSD').addEventListener('change', function(){
+        var bt = hitungBulanTahun(this.value);
+        document.getElementById('elBulan').value = bt.bulan;
+        document.getElementById('elTahun').value = bt.tahun;
+      });
+      document.getElementById('formEditMalariaLab').addEventListener('submit', function(ev){
+        ev.preventDefault();
+        saveEditMalariaLab();
+      });
+    }
+    function fillField(id, val){
+      var el = document.getElementById(id);
+      if (el) el.value = (val !== undefined && val !== null) ? val : '';
+    }
+    function trimTime(s){ return s ? String(s).split('T')[0] : ''; }
+    fillField('elNoReg', item.noRegLab);
+    fillField('elNama', item.namaPasienLab);
+    fillField('elJK', item.jenisKelamin);
+    fillField('elTglLahir', trimTime(item.tglLahirLab));
+    fillField('elUsia', item.usiaLab);
+    fillField('elAlamat', item.alamatLengkapLab);
+    fillField('elMetode', item.metodePemeriksaan);
+    fillField('elAlasan', item.alasanPemeriksaan);
+    fillField('elHasil', item.hasilMikroskopis);
+    fillField('elGametosit', item.gametosit);
+    fillField('elKepadatan', item.kepadatanParasit);
+    fillField('elKodeSlide', item.kodeSlide);
+    fillField('elTglSD', trimTime(item.tglSDdiperiksa));
+    fillField('elBulan', item.bulanLab);
+    fillField('elTahun', item.tahunLab);
+    fillField('elRowIndex', item.id);
+    overlay.style.display = 'flex';
+    hideMsg('editLabMsg');
+  }
+
+  function closeEditLabModal(){
+    var overlay = document.getElementById('editLabModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+    currentEditLabItem = null;
+  }
+
+  function saveEditMalariaLab(){
+    var form = document.getElementById('formEditMalariaLab');
+    if (!form) return;
+    var payload = serializeForm(form);
+    if (!payload.noRegLab || !payload.namaPasienLab || !payload.tglSDdiperiksa) {
+      showMsg('editLabMsg', 'No.Reg Lab, Nama, Tgl SD wajib diisi.', 'err');
+      return;
+    }
+    var btn = document.getElementById('btnSaveEditLab');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    payload._target = 'MalariaLab';
+    putToSheet('MalariaLab', payload)
+      .then(function(json){
+        if (json.status === 'success'){
+          showMsg('editLabMsg', 'Data berhasil diperbarui.', 'ok');
+          state.cache.MalariaLab = null;
+          setTimeout(function(){
+            closeEditLabModal();
+            refreshMalariaLabLaporan();
+          }, 800);
+        } else {
+          showMsg('editLabMsg', 'Gagal memperbarui: ' + (json.message||''), 'err');
+        }
+      })
+      .catch(function(err){ showMsg('editLabMsg', 'Gagal: ' + err.message, 'err'); })
+      .then(function(){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan'; });
+  }
+
   function saveEditRabies(){
     var form = document.getElementById('formEditRabies');
     if (!form) return;
