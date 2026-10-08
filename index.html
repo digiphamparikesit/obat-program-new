@@ -1269,6 +1269,164 @@
       .then(function(){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan'; });
   }
 
+  // =================================================================
+  // EDIT DATA MALARIA (PASIEN)
+  // =================================================================
+  var currentEditMalariaItem = null;
+
+  function openEditMalariaModal(item) {
+    if (!item || !item.id) { alert('Data tidak valid untuk diedit.'); return; }
+    currentEditMalariaItem = item;
+    var overlay = document.getElementById('editMalariaModalOverlay');
+    if (!overlay) {
+      var modalHtml = `
+        <div id="editMalariaModalOverlay" class="modal-overlay" style="display:flex;">
+          <div class="modal-box" style="max-width:750px;">
+            <div class="modal-head"><h3>✏️ Edit Data Pasien Malaria</h3><button id="btnCloseEditMalariaModal" class="btn-close">&times;</button></div>
+            <div id="editMalariaMsg" class="msg"></div>
+            <form id="formEditMalaria" autocomplete="off">
+              <div class="grid">
+                <div class="field"><label class="required">Nama</label><input type="text" name="namaPasien" id="emNama" required></div>
+                <div class="field"><label class="required">Tgl Lahir</label><input type="date" name="tglLahir" id="emTglLahir" required></div>
+                <div class="field"><label>Umur</label><input type="text" name="umur" id="emUmur" readonly></div>
+                <div class="field"><label class="required">No.Reg</label><input type="text" name="noReg" id="emNoReg" required></div>
+                <div class="field"><label>No HP</label><input type="text" name="noTelp" id="emNoTelp"></div>
+                <div class="field"><label>FASKES</label><input type="text" name="faskes" id="emFaskes"></div>
+                <div class="field" style="grid-column:1/-1;"><label>Alamat Domisili</label><textarea name="alamatDomisili" id="emAlamatDomisili"></textarea></div>
+                <div class="field" style="grid-column:1/-1;"><label>Alamat KTP</label><textarea name="alamatKTP" id="emAlamatKTP"></textarea></div>
+                <div class="field"><label>Derajat</label><select name="derajatMalaria" id="emDerajat"><option value="">Derajat</option><option>Tanpa Komplikasi</option><option>Berat</option></select></div>
+                <div class="field"><label>Hasil</label><select name="hasilMalaria" id="emHasil"><option value="">Hasil</option><option>Falciparum</option><option>Vivax</option><option>Mix</option></select></div>
+                <div class="field"><label>Tgl Kejadian</label><input type="date" name="tglKejadian" id="emTglKejadian"></div>
+                <div class="field"><label>Tgl IGD</label><input type="date" name="tglIGD" id="emTglIGD"></div>
+                <div class="field"><label>Suhu</label><input type="number" step="0.1" name="suhuBadan" id="emSuhu"></div>
+                <div class="field"><label>BB (kg)</label><input type="number" step="0.1" name="bb" id="emBB"></div>
+                <div class="field"><label>Anemia</label><select name="anemia" id="emAnemia"><option value="">Anemia</option><option>Ya</option><option>Tidak</option></select></div>
+                <div class="field" style="grid-column:1/-1;"><label>Gejala</label><textarea name="gejala" id="emGejala"></textarea></div>
+              </div>
+              <fieldset><legend>Obat</legend>
+                <div class="obat-table-wrap"><table class="obat-table">
+                  <thead><tr><th>Obat</th><th>Jumlah</th><th>Dosis</th><th>x/hari</th><th>Hari</th><th>Ket</th></tr></thead>
+                  <tbody>
+                    <tr><td class="obat-nama">DHP</td>
+                      <td><input type="number" name="dhpJumlah" id="emDhpJumlah"></td>
+                      <td><input type="number" name="dhpDosis" id="emDhpDosis"></td>
+                      <td><input type="number" name="dhpFrekuensi" id="emDhpFrek"></td>
+                      <td><input type="number" name="dhpHari" id="emDhpHari"></td>
+                      <td><input type="text" name="dhpKeterangan" id="emDhpKet"></td>
+                    </tr>
+                    <tr><td class="obat-nama">Primakuin</td>
+                      <td><input type="number" name="primakuinJumlah" id="emPriJumlah"></td>
+                      <td><input type="number" name="primakuinDosis" id="emPriDosis"></td>
+                      <td><input type="number" name="primakuinFrekuensi" id="emPriFrek"></td>
+                      <td><input type="number" name="primakuinHari" id="emPriHari"></td>
+                      <td><input type="text" name="primakuinKeterangan" id="emPriKet"></td>
+                    </tr>
+                    <tr><td class="obat-nama">Artesunat</td>
+                      <td><input type="number" name="artesunatJumlah" id="emArtJumlah"></td>
+                      <td><input type="text" name="artesunatDosis" id="emArtDosis"></td>
+                      <td><input type="number" name="artesunatFrekuensi" id="emArtFrek"></td>
+                      <td><input type="number" name="artesunatHari" id="emArtHari"></td>
+                      <td><input type="text" name="artesunatKeterangan" id="emArtKet"></td>
+                    </tr>
+                  </tbody>
+                </table></div>
+              </fieldset>
+              <input type="hidden" name="_rowIndex" id="emRowIndex">
+              <div class="actions">
+                <button type="submit" class="btn btn-primary" id="btnSaveEditMalaria">💾 Simpan Perubahan</button>
+                <button type="button" class="btn btn-secondary" id="btnCancelEditMalaria">Batal</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      overlay = document.getElementById('editMalariaModalOverlay');
+      document.getElementById('btnCloseEditMalariaModal').addEventListener('click', closeEditMalariaModal);
+      document.getElementById('btnCancelEditMalaria').addEventListener('click', closeEditMalariaModal);
+      overlay.addEventListener('click', function(ev){ if (ev.target === overlay) closeEditMalariaModal(); });
+      document.getElementById('emTglLahir').addEventListener('change', function(){
+        document.getElementById('emUmur').value = hitungUmur(this.value);
+      });
+      document.getElementById('formEditMalaria').addEventListener('submit', function(ev){
+        ev.preventDefault();
+        saveEditMalaria();
+      });
+    }
+    function fillField(id, val){
+      var el = document.getElementById(id);
+      if (el) el.value = (val !== undefined && val !== null) ? val : '';
+    }
+    function trimTime(s){ return s ? String(s).split('T')[0] : ''; }
+    fillField('emNama', item.namaPasien);
+    fillField('emTglLahir', trimTime(item.tglLahir));
+    fillField('emUmur', item.umur);
+    fillField('emNoReg', item.noReg);
+    fillField('emNoTelp', item.noTelp);
+    fillField('emFaskes', item.faskes);
+    fillField('emAlamatDomisili', item.alamatDomisili);
+    fillField('emAlamatKTP', item.alamatKTP);
+    fillField('emDerajat', item.derajatMalaria);
+    fillField('emHasil', item.hasilMalaria);
+    fillField('emTglKejadian', trimTime(item.tglKejadian));
+    fillField('emTglIGD', trimTime(item.tglIGD));
+    fillField('emSuhu', item.suhuBadan);
+    fillField('emBB', item.bb);
+    fillField('emAnemia', item.anemia);
+    fillField('emGejala', item.gejala);
+    fillField('emDhpJumlah', item.dhpJumlah);
+    fillField('emDhpDosis', item.dhpDosis);
+    fillField('emDhpFrek', item.dhpFrekuensi);
+    fillField('emDhpHari', item.dhpHari);
+    fillField('emDhpKet', item.dhpKeterangan);
+    fillField('emPriJumlah', item.primakuinJumlah);
+    fillField('emPriDosis', item.primakuinDosis);
+    fillField('emPriFrek', item.primakuinFrekuensi);
+    fillField('emPriHari', item.primakuinHari);
+    fillField('emPriKet', item.primakuinKeterangan);
+    fillField('emArtJumlah', item.artesunatJumlah);
+    fillField('emArtDosis', item.artesunatDosis);
+    fillField('emArtFrek', item.artesunatFrekuensi);
+    fillField('emArtHari', item.artesunatHari);
+    fillField('emArtKet', item.artesunatKeterangan);
+    fillField('emRowIndex', item.id);
+    overlay.style.display = 'flex';
+    hideMsg('editMalariaMsg');
+  }
+
+  function closeEditMalariaModal(){
+    var overlay = document.getElementById('editMalariaModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+    currentEditMalariaItem = null;
+  }
+
+  function saveEditMalaria(){
+    var form = document.getElementById('formEditMalaria');
+    if (!form) return;
+    var payload = serializeForm(form);
+    if (!payload.namaPasien || !payload.tglLahir || !payload.noReg) {
+      showMsg('editMalariaMsg', 'Nama, Tgl Lahir, No.Reg wajib diisi.', 'err');
+      return;
+    }
+    var btn = document.getElementById('btnSaveEditMalaria');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    payload._target = 'Malaria';
+    putToSheet('Malaria', payload)
+      .then(function(json){
+        if (json.status === 'success'){
+          showMsg('editMalariaMsg', 'Data berhasil diperbarui.', 'ok');
+          state.cache.Malaria = null;
+          setTimeout(function(){
+            closeEditMalariaModal();
+            refreshLaporan();
+          }, 800);
+        } else {
+          showMsg('editMalariaMsg', 'Gagal memperbarui: ' + (json.message||''), 'err');
+        }
+      })
+      .catch(function(err){ showMsg('editMalariaMsg', 'Gagal: ' + err.message, 'err'); })
+      .then(function(){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan'; });
+  }
   function badgeHasil(hasil){
     if (!hasil) return '';
     var cls = 'falciparum';
@@ -1299,12 +1457,20 @@
         '<td>' + escapeHtml(item.derajatMalaria) + '</td>' +
         '<td>' + escapeHtml(item.tglKejadian) + '</td>' +
         '<td>' + escapeHtml(item.faskes) + '</td>' +
-        '<td><button class="btn btn-secondary note-btn" data-idx="' + idx + '">📋</button></td>';
+        '<td>' +
+          '<button class="btn btn-secondary note-btn" data-idx="' + idx + '" title="Catatan">📋</button> ' +
+          '<button class="btn btn-secondary edit-malaria-btn" data-idx="' + idx + '" title="Edit Data">✏️</button>' +
+        '</td>';
       tbody.appendChild(tr);
     });
     tbody.querySelectorAll('.note-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextMalaria, 'Malaria', 'namaPasien');
+      });
+    });
+    tbody.querySelectorAll('.edit-malaria-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        openEditMalariaModal(list[parseInt(btn.dataset.idx)]);
       });
     });
   }
