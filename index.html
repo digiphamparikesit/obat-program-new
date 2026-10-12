@@ -445,7 +445,7 @@ fieldset > .grid{
             <div class="field"><label>Alamat Domisili</label><textarea name="alamatDomisili"></textarea></div>
             <div class="field"><label>Alamat KTP</label><textarea name="alamatKTP"></textarea></div>
             <div class="field"><select name="derajatMalaria"><option value="">Derajat</option><option>Tanpa Komplikasi</option><option>Berat</option></select></div>
-            <div class="field"><select name="hasilMalaria"><option value="">Hasil</option><option>Falciparum</option><option>Vivax</option><option>Mix</option></select></div>
+            <div class="field"><select name="hasilMalaria"><option value="">Hasil</option><option>Plasmodium Falciparum</option><option>Plasmodium Vivax</option><option>Plasmodium Mix</option></select></div>
             <div class="field"><label>Tgl Kejadian</label><input type="date" name="tglKejadian"></div>
             <div class="field"><label>Tgl IGD</label><input type="date" name="tglIGD"></div>
             <div class="field"><label>Suhu</label><input type="number" step="0.1" name="suhuBadan"></div>
@@ -1033,6 +1033,14 @@ fieldset > .grid{
     if (!cat) return 'Tidak diketahui';
     var s = String(cat).trim();
     if (!s) return 'Tidak diketahui';
+    var lower = s.toLowerCase();
+    
+    // === Mapping khusus hasil malaria ===
+    if (lower === 'pf' || lower === 'falciparum' || lower === 'plasmodium falciparum') return 'Plasmodium Falciparum';
+    if (lower === 'pv' || lower === 'vivax' || lower === 'plasmodium vivax') return 'Plasmodium Vivax';
+    if (lower === 'pmix' || lower === 'mix' || lower === 'plasmodium mix') return 'Plasmodium Mix';
+    
+    // Default: Capitalize
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   }
 
@@ -1438,7 +1446,7 @@ fieldset > .grid{
                 <div class="field" style="grid-column:1/-1;"><label>Alamat Domisili</label><textarea name="alamatDomisili" id="emAlamatDomisili"></textarea></div>
                 <div class="field" style="grid-column:1/-1;"><label>Alamat KTP</label><textarea name="alamatKTP" id="emAlamatKTP"></textarea></div>
                 <div class="field"><label>Derajat</label><select name="derajatMalaria" id="emDerajat"><option value="">Derajat</option><option>Tanpa Komplikasi</option><option>Berat</option></select></div>
-                <div class="field"><label>Hasil</label><select name="hasilMalaria" id="emHasil"><option value="">Hasil</option><option>Falciparum</option><option>Vivax</option><option>Mix</option></select></div>
+                <div class="field"><label>Hasil</label><select name="hasilMalaria" id="emHasil"><option value="">Hasil</option><option>Plasmodium Falciparum</option><option>Plasmodium Vivax</option><option>Plasmodium Mix</option></select></div>
                 <div class="field"><label>Tgl Kejadian</label><input type="date" name="tglKejadian" id="emTglKejadian"></div>
                 <div class="field"><label>Tgl IGD</label><input type="date" name="tglIGD" id="emTglIGD"></div>
                 <div class="field"><label>Suhu</label><input type="number" step="0.1" name="suhuBadan" id="emSuhu"></div>
@@ -1835,13 +1843,32 @@ fieldset > .grid{
 
   function badgeHasil(hasil){
     if (!hasil) return '';
+    var lower = String(hasil).toLowerCase();
     var cls = 'falciparum';
-    if (/negatif/i.test(hasil)) cls = 'negatif';
-    if (/vivax/i.test(hasil)) cls = 'vivax';
-    if (/mix/i.test(hasil)) cls = 'mix';
-    return '<span class="badge ' + cls + '">' + escapeHtml(hasil) + '</span>';
+    var label = hasil;  // default: tampilkan apa adanya
+    
+    if (lower.indexOf('negatif') > -1) {
+      cls = 'negatif';
+      label = 'Negatif';
+    } else if (lower === 'pf' || lower === 'falciparum' || lower === 'plasmodium falciparum') {
+      cls = 'falciparum';
+      label = 'Plasmodium Falciparum';
+    } else if (lower === 'pv' || lower === 'vivax' || lower === 'plasmodium vivax') {
+      cls = 'vivax';
+      label = 'Plasmodium Vivax';
+    } else if (lower === 'pmix' || lower === 'mix' || lower === 'plasmodium mix') {
+      cls = 'mix';
+      label = 'Plasmodium Mix';
+    } else if (lower.indexOf('falciparum') > -1) {
+      cls = 'falciparum';
+    } else if (lower.indexOf('vivax') > -1) {
+      cls = 'vivax';
+    } else if (lower.indexOf('mix') > -1) {
+      cls = 'mix';
+    }
+    
+    return '<span class="badge ' + cls + '">' + escapeHtml(label) + '</span>';
   }
-
   // =================================================================
   // MALARIA
   // =================================================================
