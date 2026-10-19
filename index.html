@@ -157,6 +157,9 @@ fieldset > .grid{
   .badge.vivax{background:#fff4e0;color:#b3760a;}
   .badge.mix{background:#eee0fd;color:#6c3fc0;}
   .badge.negatif{background:#e6f4ea;color:#1e7e34;}
+  .badge.malariae{background:#e0f2fe;color:#0369a1;}
+  .badge.ovale{background:#fdf4ff;color:#a21caf;}
+  .badge.knowlesi{background:#fff7ed;color:#c2410c;}
   .row-actions button{padding:4px 8px;font-size:12px;}
   .empty-state{text-align:center;color:var(--muted);padding:30px 0;}
   .info-line{font-size:12px;color:var(--muted);margin:-4px 0 12px;}
@@ -445,7 +448,7 @@ fieldset > .grid{
             <div class="field"><label>Alamat Domisili</label><textarea name="alamatDomisili"></textarea></div>
             <div class="field"><label>Alamat KTP</label><textarea name="alamatKTP"></textarea></div>
             <div class="field"><select name="derajatMalaria"><option value="">Derajat</option><option>Tanpa Komplikasi</option><option>Berat</option></select></div>
-            <div class="field"><select name="hasilMalaria"><option value="">Hasil</option><option>Plasmodium Falciparum</option><option>Plasmodium Vivax</option><option>Plasmodium Mix</option></select></div>
+            <div class="field"><select name="hasilMalaria"><option value="">Hasil</option><option>Plasmodium Falciparum</option><option>Plasmodium Vivax</option><option>Plasmodium Malariae</option><option>Plasmodium Ovale</option><option>Plasmodium Knowlesi</option><option>Plasmodium Mix</option></select></div>
             <div class="field"><label>Tgl Kejadian</label><input type="date" name="tglKejadian"></div>
             <div class="field"><label>Tgl IGD</label><input type="date" name="tglIGD"></div>
             <div class="field"><label>Suhu</label><input type="number" step="0.1" name="suhuBadan"></div>
@@ -463,7 +466,16 @@ fieldset > .grid{
               </tbody>
             </table></div>
           </fieldset>
-          <div class="actions"><button type="submit" class="btn btn-primary" id="btnSimpan">💾 Simpan</button><button type="reset" class="btn btn-secondary">Bersihkan</button></div>
+          <div class="actions" style="align-items: center;">
+            <button type="submit" class="btn btn-primary" id="btnSimpan">💾 Simpan</button>
+            <button type="reset" class="btn btn-secondary">Bersihkan</button>
+            
+            <!-- TOMBOL BANTUAN BARU -->
+            <div style="margin-left: auto; display: flex; gap: 8px;">
+              <button type="button" class="btn" style="background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc;" id="btnPanduanJenisMalaria">📖 Jenis Malaria</button>
+              <button type="button" class="btn" style="background:#fdf4ff; color:#a21caf; border:1px solid #f0abfc;" id="btnPanduanTerapi">💊 Tabel Terapi Obat</button>
+            </div>
+          </div>
         </form>
       </div>
     </div>
@@ -1035,12 +1047,15 @@ fieldset > .grid{
     if (!s) return 'Tidak diketahui';
     var lower = s.toLowerCase();
     
-    // === Mapping khusus hasil malaria ===
+    // Mapping khusus hasil malaria
     if (lower === 'pf' || lower === 'falciparum' || lower === 'plasmodium falciparum') return 'Plasmodium Falciparum';
     if (lower === 'pv' || lower === 'vivax' || lower === 'plasmodium vivax') return 'Plasmodium Vivax';
+    if (lower === 'pm' || lower === 'malariae' || lower === 'plasmodium malariae') return 'Plasmodium Malariae';
+    if (lower === 'po' || lower === 'ovale' || lower === 'plasmodium ovale') return 'Plasmodium Ovale';
+    if (lower === 'pk' || lower === 'knowlesi' || lower === 'plasmodium knowlesi') return 'Plasmodium Knowlesi';
     if (lower === 'pmix' || lower === 'mix' || lower === 'plasmodium mix') return 'Plasmodium Mix';
+    if (lower === 'tidak diketahui' || lower === 'tidak_diketahui') return 'Tidak Diketahui';
     
-    // Default: Capitalize
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
   }
 
@@ -1446,7 +1461,7 @@ fieldset > .grid{
                 <div class="field" style="grid-column:1/-1;"><label>Alamat Domisili</label><textarea name="alamatDomisili" id="emAlamatDomisili"></textarea></div>
                 <div class="field" style="grid-column:1/-1;"><label>Alamat KTP</label><textarea name="alamatKTP" id="emAlamatKTP"></textarea></div>
                 <div class="field"><label>Derajat</label><select name="derajatMalaria" id="emDerajat"><option value="">Derajat</option><option>Tanpa Komplikasi</option><option>Berat</option></select></div>
-                <div class="field"><label>Hasil</label><select name="hasilMalaria" id="emHasil"><option value="">Hasil</option><option>Plasmodium Falciparum</option><option>Plasmodium Vivax</option><option>Plasmodium Mix</option></select></div>
+                <div class="field"><label>Hasil</label><select name="hasilMalaria" id="emHasil"><option value="">Hasil</option><option>Plasmodium Falciparum</option><option>Plasmodium Vivax</option><option>Plasmodium Malariae</option><option>Plasmodium Ovale</option><option>Plasmodium Knowlesi</option><option>Plasmodium Mix</option></select></div>
                 <div class="field"><label>Tgl Kejadian</label><input type="date" name="tglKejadian" id="emTglKejadian"></div>
                 <div class="field"><label>Tgl IGD</label><input type="date" name="tglIGD" id="emTglIGD"></div>
                 <div class="field"><label>Suhu</label><input type="number" step="0.1" name="suhuBadan" id="emSuhu"></div>
@@ -1845,26 +1860,40 @@ fieldset > .grid{
     if (!hasil) return '';
     var lower = String(hasil).toLowerCase();
     var cls = 'falciparum';
-    var label = hasil;  // default: tampilkan apa adanya
+    var label = hasil;
     
     if (lower.indexOf('negatif') > -1) {
       cls = 'negatif';
       label = 'Negatif';
     } else if (lower === 'pf' || lower === 'falciparum' || lower === 'plasmodium falciparum') {
       cls = 'falciparum';
-      label = 'Plasmodium Falciparum';
+      label = 'P. Falciparum';
     } else if (lower === 'pv' || lower === 'vivax' || lower === 'plasmodium vivax') {
       cls = 'vivax';
-      label = 'Plasmodium Vivax';
+      label = 'P. Vivax';
+    } else if (lower === 'pm' || lower === 'malariae' || lower === 'plasmodium malariae') {
+      cls = 'malariae';
+      label = 'P. Malariae';
+    } else if (lower === 'po' || lower === 'ovale' || lower === 'plasmodium ovale') {
+      cls = 'ovale';
+      label = 'P. Ovale';
+    } else if (lower === 'pk' || lower === 'knowlesi' || lower === 'plasmodium knowlesi') {
+      cls = 'knowlesi';
+      label = 'P. Knowlesi';
     } else if (lower === 'pmix' || lower === 'mix' || lower === 'plasmodium mix') {
       cls = 'mix';
-      label = 'Plasmodium Mix';
-    } else if (lower.indexOf('falciparum') > -1) {
-      cls = 'falciparum';
-    } else if (lower.indexOf('vivax') > -1) {
-      cls = 'vivax';
-    } else if (lower.indexOf('mix') > -1) {
-      cls = 'mix';
+      label = 'P. Mix';
+    } else if (lower === 'tidak diketahui' || lower === 'tidak_diketahui') {
+      cls = 'negatif';
+      label = 'Tidak Diketahui';
+    } else {
+      // Fallback untuk string parsial
+      if (lower.indexOf('falciparum') > -1) { cls = 'falciparum'; label = 'P. Falciparum'; }
+      else if (lower.indexOf('vivax') > -1) { cls = 'vivax'; label = 'P. Vivax'; }
+      else if (lower.indexOf('malariae') > -1) { cls = 'malariae'; label = 'P. Malariae'; }
+      else if (lower.indexOf('ovale') > -1) { cls = 'ovale'; label = 'P. Ovale'; }
+      else if (lower.indexOf('knowlesi') > -1) { cls = 'knowlesi'; label = 'P. Knowlesi'; }
+      else if (lower.indexOf('mix') > -1) { cls = 'mix'; label = 'P. Mix'; }
     }
     
     return '<span class="badge ' + cls + '">' + escapeHtml(label) + '</span>';
