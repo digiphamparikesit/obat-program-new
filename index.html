@@ -3834,6 +3834,22 @@ fieldset > .grid{
     // Init realtime
     initRealtime();
 
+    // === TOMBOL BANTUAN PANDUAN MALARIA ===
+    var btnPanduanJenis = document.getElementById('btnPanduanJenisMalaria');
+    if (btnPanduanJenis) {
+      btnPanduanJenis.addEventListener('click', function(){
+        document.getElementById('modalPanduanJenis').style.display = 'flex';
+      });
+    }
+    
+    var btnPanduanTerapi = document.getElementById('btnPanduanTerapi');
+    if (btnPanduanTerapi) {
+      btnPanduanTerapi.addEventListener('click', function(){
+        document.getElementById('modalPanduanTerapi').style.display = 'flex';
+      });
+    }
+    // ========================================
+    
     loadDashboardData();
   }
 
@@ -3843,5 +3859,100 @@ fieldset > .grid{
 
 })();
 </script>
+  <!-- MODAL PANDUAN JENIS MALARIA -->
+<div id="modalPanduanJenis" class="modal-overlay">
+  <div class="modal-box" style="max-width: 700px;">
+    <div class="modal-head">
+      <h3>📖 Panduan Jenis Malaria</h3>
+      <button class="btn-close" onclick="document.getElementById('modalPanduanJenis').style.display='none'">&times;</button>
+    </div>
+    <div style="font-size: 13px; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+      <p><strong>1. Plasmodium Falciparum (Malaria Tropika)</strong><br>Spesies paling berbahaya, bisa menyebabkan malaria berat (komplikasi). Siklus demam tidak teratur.</p>
+      <p><strong>2. Plasmodium Vivax (Malaria Tertiana)</strong><br>Siklus demam 48 jam. Dapat membentuk hipnozoit (fase dorman) di hati yang berisiko menyebabkan kekambuhan (relaps).</p>
+      <p><strong>3. Plasmodium Ovale (Malaria Ovale)</strong><br>Secara biologis dan klinis sangat mirip dengan P. vivax. Sama seperti P. vivax, P. ovale juga dapat membentuk hipnozoit (fase dorman) di hati yang berisiko menyebabkan kekambuhan.</p>
+      <p><strong>4. Plasmodium Malariae</strong><br>Siklus demam 72 jam. Tidak memiliki fase dorman di hati, sehingga tidak menyebabkan relaps (kambuh).</p>
+      <p><strong>5. Plasmodium Knowlesi</strong><br>Biasanya menyerang kera, namun dapat menular ke manusia. Siklus 24 jam, bisa berkembang cepat menjadi berat.</p>
+      <p><strong>6. Plasmodium Mix (Infeksi Campuran)</strong><br>Infeksi oleh lebih dari satu spesies Plasmodium sekaligus (contoh: P. falciparum + P. vivax).</p>
+    </div>
+    <div class="actions" style="margin-top: 15px;">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('modalPanduanJenis').style.display='none'">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PANDUAN TERAPI OBAT -->
+<div id="modalPanduanTerapi" class="modal-overlay">
+  <div class="modal-box" style="max-width: 800px;">
+    <div class="modal-head">
+      <h3>💊 Tabel Terapi Obat Malaria Tanpa Komplikasi</h3>
+      <button class="btn-close" onclick="document.getElementById('modalPanduanTerapi').style.display='none'">&times;</button>
+    </div>
+    <div style="font-size: 13px; line-height: 1.5; max-height: 65vh; overflow-y: auto; padding-right: 10px;">
+      
+      <h4 style="color: var(--primary-dark); margin-top: 0;">1. Dosis DHP (Dihydroartemisinin + Piperaquine)</h4>
+      <p>Diberikan 1 kali sehari selama <strong>3 hari berturut-turut</strong> setelah makan.</p>
+      <table style="margin-bottom: 15px;">
+        <thead><tr><th>Berat Badan (BB)</th><th>Jumlah Tablet DHP / Hari</th></tr></thead>
+        <tbody>
+          <tr><td>5 – 8 kg</td><td>1/2 tablet</td></tr>
+          <tr><td>9 – 14 kg</td><td>1 tablet</td></tr>
+          <tr><td>15 – 17 kg</td><td>1 1/2 tablet</td></tr>
+          <tr><td>18 – 30 kg</td><td>2 tablet</td></tr>
+          <tr><td>31 – 40 kg</td><td>3 tablet</td></tr>
+          <tr><td>41 – 59 kg</td><td>4 tablet</td></tr>
+          <tr><td>≥ 60 kg</td><td>5 tablet</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="color: var(--primary-dark);">2. Dosis Primakuin Berdasarkan Spesies</h4>
+      <p style="color: var(--danger); font-size: 12px;"><strong>⚠️ DILARANG</strong> diberikan pada Ibu Hamil dan Bayi usia &lt; 6 bulan.</p>
+      
+      <p><strong>A. P. falciparum & Probable knowlesi</strong><br>Diberikan hanya 1 kali pada Hari ke-1 saja.</p>
+      <table style="margin-bottom: 15px;">
+        <thead><tr><th>Berat Badan (BB)</th><th>Dosis Primakuin (Hari Ke-1)</th></tr></thead>
+        <tbody>
+          <tr><td>&lt; 6 bulan</td><td style="color:red;">TIDAK BOLEH DIBERIKAN</td></tr>
+          <tr><td>5 – 8 kg</td><td>1/4 tablet</td></tr>
+          <tr><td>9 – 14 kg</td><td>1/2 tablet</td></tr>
+          <tr><td>15 – 17 kg</td><td>3/4 tablet</td></tr>
+          <tr><td>18 – 30 kg</td><td>1 tablet</td></tr>
+          <tr><td>31 – 40 kg</td><td>1 1/2 tablet</td></tr>
+          <tr><td>41 – 59 kg</td><td>2 tablet</td></tr>
+          <tr><td>≥ 60 kg</td><td>2 tablet</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>B. P. vivax & P. ovale</strong><br>Diberikan selama 14 hari berturut-turut (setiap hari 1 kali).</p>
+      <table style="margin-bottom: 15px;">
+        <thead><tr><th>Berat Badan (BB)</th><th>Dosis Primakuin / Hari (14 Hari)</th></tr></thead>
+        <tbody>
+          <tr><td>&lt; 6 bulan</td><td style="color:red;">TIDAK BOLEH DIBERIKAN</td></tr>
+          <tr><td>5 – 8 kg</td><td>1/4 tablet</td></tr>
+          <tr><td>9 – 14 kg</td><td>1/2 tablet</td></tr>
+          <tr><td>15 – 17 kg</td><td>3/4 tablet</td></tr>
+          <tr><td>18 – 30 kg</td><td>1 tablet</td></tr>
+          <tr><td>31 – 40 kg</td><td>1 1/2 tablet</td></tr>
+          <tr><td>41 – 59 kg</td><td>2 tablet</td></tr>
+          <tr><td>≥ 60 kg</td><td>2 tablet</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:12px; font-style:italic;">* Catatan Vivaks Relaps (Kambuh): Dosis Primakuin dilipatgandakan menjadi 0,5 mg/kgBB/hari selama 14 hari (setelah memastikan enzim G6PD aman).</p>
+
+      <p><strong>C. P. malariae</strong><br>TIDAK DIBERIKAN PRIMAKUIN (Hanya DHP selama 3 hari).</p>
+
+      <h4 style="color: var(--primary-dark);">3. Skema Infeksi Campuran (Mixed)</h4>
+      <p>P. falciparum + P. vivax / P. ovale:<br>
+      DHP diminum 3 hari. Primakuin diberikan selama 14 hari (Hari ke-1 dosis falciparum + vivax, hari ke-2 s.d 14 dosis vivax).</p>
+
+      <div style="background: #fef2f2; border: 1px solid #f87171; padding: 10px; border-radius: 6px; margin-top: 10px;">
+        <strong>⚠️ Peringatan Klinis:</strong><br>
+        Penggunaan dan penyesuaian dosis obat malaria harus selalu di bawah pengawasan tenaga medis/dokter dan berdasarkan konfirmasi hasil laboratorium (pemeriksaan darah tebal/RDT).
+      </div>
+    </div>
+    <div class="actions" style="margin-top: 15px;">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('modalPanduanTerapi').style.display='none'">Tutup</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
