@@ -1679,6 +1679,127 @@
     });
   }
 
+    // =================================================================
+  // FUNGSI STOK & INFO HYPERHEP / RABIES (YANG HILANG)
+  // =================================================================
+  function renderStokRiwayat(list){
+    var tbody = document.getElementById('bodyStokRiwayat');
+    var empty = document.getElementById('emptyStokState');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!list || !list.length){ if (empty) empty.style.display = 'block'; return; }
+    if (empty) empty.style.display = 'none';
+    list.forEach(function(item){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + escapeHtml(item.tanggalInput) + '</td>' +
+        '<td>' + escapeHtml(item.jumlahVialMasuk) + '</td>' +
+        '<td>' + escapeHtml(item.noBatch) + '</td>' +
+        '<td>' + escapeHtml(item.tanggalKadaluarsa) + '</td>' +
+        '<td>' + escapeHtml(item.sumberDistributor) + '</td>' +
+        '<td>' + escapeHtml(item.catatanStok) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function refreshHyperhepStok(){
+    showMsg('msgHyperhepStok', 'Memuat ulang stok...', 'info');
+    getDataWithCache('HyperhepStok', true, function(errStok, stokData){
+      if (errStok) { showMsg('msgHyperhepStok', 'Gagal stok: ' + errStok, 'err'); return; }
+      getDataWithCache('HyperhepPasien', true, function(errPasien, pasienData){
+        if (errPasien) { showMsg('msgHyperhepStok', 'Gagal pasien: ' + errPasien, 'err'); return; }
+        var masuk = 0; stokData.forEach(function(r){ masuk += parseFloat(r.jumlahVialMasuk) || 0; });
+        var terpakai = pasienData.length;
+        var sisa = masuk - terpakai;
+        document.getElementById('stokMasukTotal').textContent = masuk;
+        document.getElementById('stokTerpakaiTotal').textContent = terpakai;
+        document.getElementById('stokSisaTotal').textContent = sisa;
+        document.getElementById('stokSisaBox').classList.toggle('warn', sisa <= 5);
+        renderStokRiwayat(stokData);
+        hideMsg('msgHyperhepStok');
+      });
+    });
+  }
+
+  var userEditedNamaBayi = false;
+
+  function updateInfoSisaStok(){
+    var infoEl = document.getElementById('infoSisaStok');
+    if (!infoEl) return;
+    infoEl.textContent = 'Memuat info stok...';
+    infoEl.classList.remove('warn');
+    getDataWithCache('HyperhepStok', false, function(errStok, stokData){
+      if (errStok) { infoEl.textContent = 'Gagal stok: ' + errStok; infoEl.classList.add('warn'); return; }
+      getDataWithCache('HyperhepPasien', false, function(errPasien, pasienData){
+        if (errPasien) { infoEl.textContent = 'Gagal pasien: ' + errPasien; infoEl.classList.add('warn'); return; }
+        var masuk = 0; stokData.forEach(function(r){ masuk += parseFloat(r.jumlahVialMasuk) || 0; });
+        var terpakai = pasienData.length;
+        var sisa = masuk - terpakai;
+        infoEl.textContent = '💉 Sisa stok Hyperhep: ' + sisa + ' vial (Masuk: ' + masuk + ', Terpakai: ' + terpakai + ')';
+        if (sisa <= 0){ infoEl.classList.add('warn'); infoEl.textContent += ' — STOK HABIS!'; }
+        else if (sisa <= 5){ infoEl.classList.add('warn'); infoEl.textContent += ' — stok menipis!'; }
+      });
+    });
+  }
+
+  function renderStokRiwayatRabies(list){
+    var tbody = document.getElementById('bodyStokRiwayatRabies');
+    var empty = document.getElementById('emptyStokStateRabies');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!list || !list.length){ if (empty) empty.style.display = 'block'; return; }
+    if (empty) empty.style.display = 'none';
+    list.forEach(function(item){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + escapeHtml(item.tanggalInput) + '</td>' +
+        '<td>' + escapeHtml(item.jumlahVialMasuk) + '</td>' +
+        '<td>' + escapeHtml(item.noBatch) + '</td>' +
+        '<td>' + escapeHtml(item.tanggalKadaluarsa) + '</td>' +
+        '<td>' + escapeHtml(item.sumberDistributor) + '</td>' +
+        '<td>' + escapeHtml(item.catatanStok) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateInfoSisaStokRabies(){
+    var infoEl = document.getElementById('infoSisaStokRabies');
+    if (!infoEl) return;
+    infoEl.textContent = 'Memuat info stok...';
+    infoEl.classList.remove('warn');
+    getDataWithCache('RabiesStok', false, function(errStok, stokData){
+      if (errStok) { infoEl.textContent = 'Gagal stok: ' + errStok; infoEl.classList.add('warn'); return; }
+      getDataWithCache('RabiesPasien', false, function(errPasien, pasienData){
+        if (errPasien) { infoEl.textContent = 'Gagal pasien: ' + errPasien; infoEl.classList.add('warn'); return; }
+        var masuk = 0; stokData.forEach(function(r){ masuk += parseFloat(r.jumlahVialMasuk) || 0; });
+        var terpakai = 0; pasienData.forEach(function(r){ terpakai += parseFloat(r.jumlahVialRabies) || 0; });
+        var sisa = masuk - terpakai;
+        infoEl.textContent = '💉 Sisa stok Rabies: ' + sisa + ' vial (Masuk: ' + masuk + ', Terpakai: ' + terpakai + ')';
+        if (sisa <= 0){ infoEl.classList.add('warn'); infoEl.textContent += ' — STOK HABIS!'; }
+        else if (sisa <= 5){ infoEl.classList.add('warn'); infoEl.textContent += ' — stok menipis!'; }
+      });
+    });
+  }
+
+  function refreshRabiesStok(){
+    showMsg('msgRabiesStok', 'Memuat ulang stok...', 'info');
+    getDataWithCache('RabiesStok', true, function(errStok, stokData){
+      if (errStok) { showMsg('msgRabiesStok', 'Gagal stok: ' + errStok, 'err'); return; }
+      getDataWithCache('RabiesPasien', true, function(errPasien, pasienData){
+        if (errPasien) { showMsg('msgRabiesStok', 'Gagal pasien: ' + errPasien, 'err'); return; }
+        var masuk = 0; stokData.forEach(function(r){ masuk += parseFloat(r.jumlahVialMasuk) || 0; });
+        var terpakai = 0; pasienData.forEach(function(r){ terpakai += parseFloat(r.jumlahVialRabies) || 0; });
+        var sisa = masuk - terpakai;
+        document.getElementById('stokMasukTotalRabies').textContent = masuk;
+        document.getElementById('stokTerpakaiTotalRabies').textContent = terpakai;
+        document.getElementById('stokSisaTotalRabies').textContent = sisa;
+        document.getElementById('stokSisaBoxRabies').classList.toggle('warn', sisa <= 5);
+        renderStokRiwayatRabies(stokData);
+        hideMsg('msgRabiesStok');
+      });
+    });
+  }
+
   function renderHyperhepLaporan(list){
     var tbody = document.getElementById('bodyHyperhepLaporan');
     var empty = document.getElementById('emptyHyperhepState');
