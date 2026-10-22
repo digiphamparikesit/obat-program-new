@@ -629,7 +629,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>No</th><th>No.Reg</th><th>Nama</th><th>NIK</th><th>Tgl Lahir</th><th>Umur</th><th>HP</th><th>Alamat</th><th>Vaksin</th><th>Puskesmas</th><th>Hewan</th><th>Lokasi</th><th>Tgl Digigit</th><th>Tgl ke RS</th><th>Cuci Luka</th><th>Tgl Vaksin</th><th>Bulan</th><th>Tahun</th><th>Vial</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>No</th><th>Lapor SMILE</th><th>No.Reg</th><th>Nama</th><th>NIK</th><th>Tgl Lahir</th><th>Umur</th><th>HP</th><th>Alamat</th><th>Vaksin</th><th>Puskesmas</th><th>Hewan</th><th>Lokasi</th><th>Tgl Digigit</th><th>Tgl ke RS</th><th>Cuci Luka</th><th>Tgl Vaksin</th><th>Bulan</th><th>Tahun</th><th>Vial</th><th>Aksi</th></tr></thead>
             <tbody id="bodyRabiesLaporan"></tbody>
           </table>
           <div id="emptyRabiesState" class="empty-state">Belum ada data</div>
@@ -1944,6 +1944,7 @@
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td>' + (idx + 1) + '</td>' +
+        '<td><input type="checkbox" class="smile-checkbox" data-id="' + item.id + '" data-val="' + item.laporSmile + '" ' + (item.laporSmile ? 'checked' : '') + ' style="cursor:pointer;width:18px;height:18px;"></td>' +
         '<td>' + escapeHtml(item.noReg) + '</td>' +
         '<td>' + escapeHtml(item.namaPasien) + '</td>' +
         '<td>' + escapeHtml(item.nikKtp) + '</td>' +
@@ -1972,6 +1973,21 @@
     tbody.querySelectorAll('.note-btn').forEach(function(btn){ btn.addEventListener('click', function(){ openNoteModal(list[parseInt(btn.dataset.idx)], buildCatatanTextRabies, 'Rabies', 'namaPasien'); }); });
     tbody.querySelectorAll('.edit-rabies-btn').forEach(function(btn){ btn.addEventListener('click', function(){ openEditRabiesModal(list[parseInt(btn.dataset.idx)]); }); });
     tbody.querySelectorAll('.delete-rabies-btn').forEach(function(btn){ btn.addEventListener('click', function(){ handleDelete('RabiesPasien', list[parseInt(btn.dataset.idx)], refreshRabiesLaporan); }); });
+    // Event listener untuk ceklis SMILE
+    tbody.querySelectorAll('.smile-checkbox').forEach(function(chk){
+      chk.addEventListener('change', function() {
+        var id = this.getAttribute('data-id');
+        var isChecked = this.checked;
+        
+        putToSheet('RabiesPasien', { _rowIndex: id, laporSmile: isChecked })
+          .then(function(res) {
+            if (res.status === 'error') {
+              alert('Gagal update SMILE: ' + res.message);
+              document.querySelector('.smile-checkbox[data-id="' + id + '"]').checked = !isChecked;
+            }
+          });
+      });
+    });
   }
 
   function applyFilterRabies(){
