@@ -1631,9 +1631,20 @@
     state.filteredData.Malaria = filtered; renderLaporan(filtered);
   }
   function populateFilterTahunMalaria(list){
-    var select = document.getElementById('filterTahunMalaria'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, 'tglKejadian', null, null); if (bt.tahun) tahunSet[bt.tahun] = true; });
+    var select = document.getElementById('filterTahunMalaria'); 
+    if (!select) return;
+    
+    var currentVal = select.value; // ← TAMBAHKAN INI
+
+    var tahunSet = {}; 
+    list.forEach(function(item){ 
+      var bt = getBulanTahunWithFallback(item, 'tglKejadian', null, null); 
+      if (bt.tahun) tahunSet[bt.tahun] = true; 
+    });
+    
     select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    if (currentVal && tahunSet[currentVal]) { select.value = currentVal; } // ← TAMBAHKAN INI
   }
   function refreshLaporan(){
     showMsg('msgLaporan', 'Memuat ulang...', 'info');
@@ -1692,9 +1703,20 @@
     state.filteredData.MalariaLab = filtered; state.malariaLabDataFiltered = filtered; renderMalariaLabLaporan(filtered);
   }
   function populateFilterTahunMalariaLab(list){
-    var select = document.getElementById('filterTahunMalariaLab'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, ['tglSDdiperiksa'], 'bulanLab', 'tahunLab'); if (bt.tahun) tahunSet[bt.tahun] = true; });
+    var select = document.getElementById('filterTahunMalariaLab'); 
+    if (!select) return;
+    
+    var currentVal = select.value; // ← TAMBAHKAN INI
+
+    var tahunSet = {}; 
+    list.forEach(function(item){ 
+      var bt = getBulanTahunWithFallback(item, ['tglSDdiperiksa'], 'bulanLab', 'tahunLab'); 
+      if (bt.tahun) tahunSet[bt.tahun] = true; 
+    });
+    
     select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    if (currentVal && tahunSet[currentVal]) { select.value = currentVal; } // ← TAMBAHKAN INI
   }
   function refreshMalariaLabLaporan(){
     showMsg('msgMalariaLabLaporan', 'Memuat ulang...', 'info');
@@ -1870,9 +1892,20 @@
     state.filteredData.HyperhepPasien = filtered; renderHyperhepLaporan(filtered);
   }
   function populateFilterTahunHyperhep(list){
-    var select = document.getElementById('filterTahunHyperhep'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, ['tglMelahirkan'], null, null); if (bt.tahun) tahunSet[bt.tahun] = true; });
+    var select = document.getElementById('filterTahunHyperhep'); 
+    if (!select) return;
+    
+    var currentVal = select.value; // ← TAMBAHKAN INI
+
+    var tahunSet = {}; 
+    list.forEach(function(item){ 
+      var bt = getBulanTahunWithFallback(item, ['tglMelahirkan'], null, null); 
+      if (bt.tahun) tahunSet[bt.tahun] = true; 
+    });
+    
     select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    if (currentVal && tahunSet[currentVal]) { select.value = currentVal; } // ← TAMBAHKAN INI
   }
   function refreshHyperhepLaporan(){
     showMsg('msgHyperhepLaporan', 'Memuat ulang...', 'info');
@@ -1922,9 +1955,20 @@
     state.filteredData.Tuberkulin = filtered; renderTuberkulinLaporan(filtered);
   }
   function populateFilterTahunTuberkulin(list){
-    var select = document.getElementById('filterTahunTuberkulin'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, ['tglPemberianObat'], 'bulanPemberian', 'tahunPemberian'); if (bt.tahun) tahunSet[bt.tahun] = true; });
+    var select = document.getElementById('filterTahunTuberkulin'); 
+    if (!select) return;
+    
+    var currentVal = select.value; // ← TAMBAHKAN INI
+
+    var tahunSet = {}; 
+    list.forEach(function(item){ 
+      var bt = getBulanTahunWithFallback(item, ['tglPemberianObat'], 'bulanPemberian', 'tahunPemberian'); 
+      if (bt.tahun) tahunSet[bt.tahun] = true; 
+    });
+    
     select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    if (currentVal && tahunSet[currentVal]) { select.value = currentVal; } // ← TAMBAHKAN INI
   }
   function refreshTuberkulinLaporan(){
     showMsg('msgTuberkulinLaporan', 'Memuat ulang...', 'info');
@@ -2003,9 +2047,25 @@
     state.filteredData.RabiesPasien = filtered; state.rabiesDataFiltered = filtered; renderRabiesLaporan(filtered);
   }
   function populateFilterTahunRabies(list){
-    var select = document.getElementById('filterTahunRabies'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, ['tglKeRS', 'tglDigigit', 'tglVaksin'], 'bulanKeRS', 'tahunKeRS'); if (bt.tahun) tahunSet[bt.tahun] = true; });
-    select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    var select = document.getElementById('filterTahunRabies');
+    if (!select) return;
+    
+    // Simpan nilai yang sedang dipilih sebelum di-render ulang
+    var currentVal = select.value;
+    
+    var tahunSet = {};
+    list.forEach(function(item){
+      var bt = getBulanTahunWithFallback(item, ['tglKeRS', 'tglDigigit', 'tglVaksin'], 'bulanKeRS', 'tahunKeRS');
+      if (bt.tahun) tahunSet[bt.tahun] = true;
+    });
+    var tahunList = Object.keys(tahunSet).sort(function(a,b){ return b-a; });
+    
+    select.innerHTML = '<option value="">Semua Tahun</option>' + tahunList.map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    // Kembalikan nilai yang tadi dipilih (jika masih ada di list)
+    if (currentVal && tahunSet[currentVal]) {
+      select.value = currentVal;
+    }
   }
   function refreshRabiesLaporan(){
     showMsg('msgRabiesLaporan', 'Memuat ulang...', 'info');
@@ -2063,9 +2123,20 @@
     state.filteredData.Susu = filtered; renderSusuLaporan(filtered);
   }
   function populateFilterTahunSusu(list){
-    var select = document.getElementById('filterTahunSusu'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, ['tanggalInputLaporan'], 'bulan', 'tahun'); if (bt.tahun) tahunSet[bt.tahun] = true; });
+    var select = document.getElementById('filterTahunSusu'); 
+    if (!select) return;
+    
+    var currentVal = select.value; // ← TAMBAHKAN INI
+
+    var tahunSet = {}; 
+    list.forEach(function(item){ 
+      var bt = getBulanTahunWithFallback(item, ['tanggalInputLaporan'], 'bulan', 'tahun'); 
+      if (bt.tahun) tahunSet[bt.tahun] = true; 
+    });
+    
     select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    if (currentVal && tahunSet[currentVal]) { select.value = currentVal; } // ← TAMBAHKAN INI
   }
   function refreshSusu(){
     showMsg('msgSusuLaporan', 'Memuat ulang...', 'info');
@@ -2128,9 +2199,20 @@
     state.filteredData.Cobra = filtered; renderCobraLaporan(filtered);
   }
   function populateFilterTahunCobra(list){
-    var select = document.getElementById('filterTahunCobra'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, ['tanggal'], 'bulan', 'tahun'); if (bt.tahun) tahunSet[bt.tahun] = true; });
+    var select = document.getElementById('filterTahunCobra'); 
+    if (!select) return;
+    
+    var currentVal = select.value; // ← TAMBAHKAN INI
+
+    var tahunSet = {}; 
+    list.forEach(function(item){ 
+      var bt = getBulanTahunWithFallback(item, ['tanggal'], 'bulan', 'tahun'); 
+      if (bt.tahun) tahunSet[bt.tahun] = true; 
+    });
+    
     select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    if (currentVal && tahunSet[currentVal]) { select.value = currentVal; } // ← TAMBAHKAN INI
   }
   function refreshCobra(){
     showMsg('msgCobraLaporan', 'Memuat ulang...', 'info');
@@ -2188,9 +2270,20 @@
     state.filteredData.Difteri = filtered; renderDifteriLaporan(filtered);
   }
   function populateFilterTahunDifteri(list){
-    var select = document.getElementById('filterTahunDifteri'); if (!select) return;
-    var tahunSet = {}; list.forEach(function(item){ var bt = getBulanTahunWithFallback(item, ['tanggal'], 'bulan', 'tahun'); if (bt.tahun) tahunSet[bt.tahun] = true; });
+    var select = document.getElementById('filterTahunDifteri'); 
+    if (!select) return;
+    
+    var currentVal = select.value; // ← TAMBAHKAN INI
+
+    var tahunSet = {}; 
+    list.forEach(function(item){ 
+      var bt = getBulanTahunWithFallback(item, ['tanggal'], 'bulan', 'tahun'); 
+      if (bt.tahun) tahunSet[bt.tahun] = true; 
+    });
+    
     select.innerHTML = '<option value="">Semua Tahun</option>' + Object.keys(tahunSet).sort(function(a,b){ return b-a; }).map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    
+    if (currentVal && tahunSet[currentVal]) { select.value = currentVal; } // ← TAMBAHKAN INI
   }
   function refreshDifteri(){
     showMsg('msgDifteriLaporan', 'Memuat ulang...', 'info');
