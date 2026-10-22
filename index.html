@@ -562,6 +562,25 @@
           <div class="stok-box"><div class="num" id="stokTerpakaiTotalRabies">-</div><div class="lbl">Terpakai</div></div>
           <div class="stok-box" id="stokSisaBoxRabies"><div class="num" id="stokSisaTotalRabies">-</div><div class="lbl">Sisa</div></div>
         </div>
+                <!-- TABEL REKAP RABIES -->
+        <div style="margin-top: 20px; margin-bottom: 20px;">
+          <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--primary-dark);">📊 Rekapitulasi Stok & Pemakaian Rabies</h3>
+          <div class="table-wrap" style="max-height: 300px;">
+            <table style="font-size: 13px; width: 100%;">
+              <thead>
+                <tr>
+                  <th>Periode</th>
+                  <th>Total Vaksin Masuk (Vial)</th>
+                  <th>Total Vial Terpakai</th>
+                  <th>Selisih (Sisa)</th>
+                </tr>
+              </thead>
+              <tbody id="bodyRekapRabies">
+                <!-- Akan diisi oleh JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
         <div id="msgRabiesStok" class="msg"></div>
         <form id="formRabiesStok" autocomplete="off">
           <div class="grid">
@@ -1842,11 +1861,100 @@
         document.getElementById('stokSisaTotalRabies').textContent = sisa;
         document.getElementById('stokSisaBoxRabies').classList.toggle('warn', sisa <= 5);
         renderStokRiwayatRabies(stokData);
+        renderRekapRabies(stokData, pasienData); // ← TAMBAHKAN BARIS INI
         hideMsg('msgRabiesStok');
       });
     });
   }
 
+  function renderRekapRabies(stokData, pasienData) {
+    var rekap = {};
+
+    // Helper untuk membuat inisialisasi grup
+    function initGrup(key) {
+      if (!rekap[key]) rekap[key] = { label: key, masuk: 0, terpakai: 0 };
+    }
+
+    // 1. Proses Data Stok Masuk
+    stokData.forEach(function(item) {
+      if (!item.tanggalInput) return;
+      var bt = hitungBulanTahun(item.tanggalInput);
+      if (!bt.tahun) return;
+      
+      var keyTahun = bt.tahun;
+      var keyBulan = bt.tahun + '-' + bt.bulan;
+      
+      initGrup(keyTahun);
+      initGrup(keyBulan);
+      
+      var qty = parseFloat(item.jumlahVialMasuk) || 0;
+      rekap[keyTahun].masuk += qty;
+      rekap[keyBulan].masuk += qty;
+    });
+
+    // 2. Proses Data Pasien (Terpakai)
+    pasienData.forEach(function(item) {
+      // Gunakan fallback tanggal dari tglKeRS -> tglDigigit -> tglVaksin
+      var bt = getBulanTahunWithFallback(item, ['tglKeRS', 'tglDigigit', 'tglVaksin'], 'bulanKeRS', 'tahunKeRS');
+      if (!bt.tahun) return;
+      
+      var keyTahun = bt.tahun;
+      var keyBulan = bt.tahun + '-' + bt.bulan;
+      
+      initGrup(keyTahun);
+      initGrup(keyBulan);
+
+      var qty = parseFloat(item.jumlahVialRabies) || 0;
+      rekap[keyTahun].terpakai += qty;
+      rekap[keyBulan].terpakai += qty;
+    });
+
+    // 3. Susun HTML Tabel
+    var tbody = document.getElementById('bodyRekapRabies');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    var keys = Object.keys(rekap);
+    
+    // Urutkan: Tahun dulu (paling baru), baru Bulan (paling baru)
+    keys.sort(function(a, b) {
+      var partsA = a.split('-');
+      var partsB = b.split('-');
+      var tahunA = parseInt(partsA[0], 10);
+      var tahunB = parseInt(partsB[0], 10);
+      if (tahunA !== tahunB) return tahunB - tahunA; // Tahun turun
+      if (partsA.length === 1) return -1; // Tahun ditaruh di atas bulan
+      if (partsB.length === 1) return 1;
+      return NAMA_BULAN.indexOf(partsB[1]) - NAMA_BULAN.indexOf(partsA[1]); // Bulan turun
+    });
+
+    // Render baris
+    keys.forEach(function(key) {
+      var data = rekap[key];
+      var sisa = data.masuk - data.terpakai;
+      var isTahun = key.split('-').length === 1;
+      
+      var tr = document.createElement('tr');
+      if (isTahun) {
+        tr.style.background = '#f0fdf4'; // Warna hijau muda untuk baris Tahun
+        tr.style.fontWeight = 'bold';
+      }
+      
+      tr.innerHTML = 
+        '<td style="padding-left: ' + (isTahun ? '8px' : '24px') + ';">' + 
+          (isTahun ? '📅 Tahun ' : '↳ ') + data.label + 
+        '</td>' +
+        '<td>' + data.masuk + '</td>' +
+        '<td>' + data.terpakai + '</td>' +
+        '<td style="color: ' + (sisa < 0 ? 'red' : 'inherit') + ';">' + sisa + '</td>';
+      
+      tbody.appendChild(tr);
+    });
+    
+    if (keys.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada data</td></tr>';
+    }
+  }
   function renderHyperhepLaporan(list){
     var tbody = document.getElementById('bodyHyperhepLaporan');
     var empty = document.getElementById('emptyHyperhepState');
