@@ -2621,6 +2621,13 @@
     if (tglLahir && umur) { tglLahir.addEventListener('change', function(){ umur.value = hitungUmur(tglLahir.value); }); if (tglLahir.value) umur.value = hitungUmur(tglLahir.value); }
     var tglKeRS = document.getElementById('tglKeRSRabies'); var bulan = document.getElementById('bulanKeRSRabies'); var tahun = document.getElementById('tahunKeRSRabies');
     if (tglKeRS && bulan && tahun) {
+      if (!tglKeRS.value) {
+         var today = new Date().toISOString().slice(0, 10);
+         tglKeRS.value = today;
+         var btHariIni = hitungBulanTahun(today);
+         bulan.value = btHariIni.bulan; 
+         tahun.value = btHariIni.tahun;
+       }
       tglKeRS.addEventListener('change', function(){ var bt = hitungBulanTahun(tglKeRS.value); bulan.value = bt.bulan; tahun.value = bt.tahun; });
       if (tglKeRS.value) { var bt = hitungBulanTahun(tglKeRS.value); bulan.value = bt.bulan; tahun.value = bt.tahun; }
     }
