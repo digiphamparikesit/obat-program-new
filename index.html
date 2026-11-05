@@ -263,16 +263,10 @@
         <div class="toolbar">
           <label style="font-size:13px;font-weight:600;color:var(--muted);">Tahun:</label>
           <select id="filterTahunDashboard" style="width:auto;"><option value="">Semua Tahun</option></select>
-          <label style="font-size:13px;font-weight:600;color:var(--muted);margin-left:10px;">Bulan:</label>
-          <select id="filterBulanDashboard" style="width:auto;">
-            <option value="">Semua Bulan</option>
-            <option value="Januari">Januari</option><option value="Februari">Februari</option>
-            <option value="Maret">Maret</option><option value="April">April</option>
-            <option value="Mei">Mei</option><option value="Juni">Juni</option>
-            <option value="Juli">Juli</option><option value="Agustus">Agustus</option>
-            <option value="September">September</option><option value="Oktober">Oktober</option>
-            <option value="November">November</option><option value="Desember">Desember</option>
-          </select>
+          <label style="font-size:13px;font-weight:600;color:var(--muted);margin-left:10px;">Dari Tgl:</label>
+<input type="date" id="filterTglMulai" style="width:auto; padding: 4px 8px;">
+<label style="font-size:13px;font-weight:600;color:var(--muted);margin-left:10px;">Sampai Tgl:</label>
+<input type="date" id="filterTglAkhir" style="width:auto; padding: 4px 8px;">
           <button class="btn btn-secondary" id="btnRefreshDashboard">🔄 Refresh</button>
           <span style="font-size:11px;color:var(--muted);margin-left:auto;font-style:italic;">💡 Klik grafik untuk memperbesar</span>
         </div>
@@ -2852,8 +2846,9 @@
   }
 
   function renderDashboard() {
-    var tahun = document.getElementById('filterTahunDashboard').value;
-    var bulan = document.getElementById('filterBulanDashboard').value;
+   var tahun = document.getElementById('filterTahunDashboard').value;
+    var tglMulai = document.getElementById('filterTglMulai').value;
+    var tglAkhir = document.getElementById('filterTglAkhir').value;
 
     var dataMap = {
       'Malaria': { data: state.data.Malaria || [], dateField: ['tglKejadian'], categoryField: 'hasilMalaria' },
@@ -2868,10 +2863,36 @@
 
     function filterData(items, dateField, bulanField, tahunField) {
       return items.filter(function(item) {
-        var bt = getBulanTahunWithFallback(item, dateField, bulanField, tahunField);
-        if (!bt.tahun) return false;
-        if (tahun && bt.tahun !== tahun) return false;
-        if (bulan && bt.bulan !== bulan) return false;
+        var dateFields = Array.isArray(dateField) ? dateField : [dateField];
+        var itemDateStr = null;
+
+        // Cari tanggal valid dari item
+        for (var i = 0; i < dateFields.length; i++) {
+          if (item[dateFields[i]]) {
+            itemDateStr = String(item[dateFields[i]]).split('T')[0]; // Ambil YYYY-MM-DD
+            break;
+          }
+        }
+
+        // Fallback jika tanggal asli kosong
+        if (!itemDateStr && bulanField && tahunField && item[bulanField] && item[tahunField]) {
+          var bulanIdx = NAMA_BULAN.indexOf(item[bulanField]);
+          if (bulanIdx > -1) {
+            var mm = String(bulanIdx + 1).padStart(2, '0');
+            itemDateStr = item[tahunField] + '-' + mm + '-01';
+          }
+        }
+
+        if (!itemDateStr) return false;
+
+        // Cek filter TAHUN (tetap dipertahankan)
+        var itemTahun = itemDateStr.split('-')[0];
+        if (tahun && itemTahun !== tahun) return false;
+
+        // Cek filter RENTANG TANGGAL
+        if (tglMulai && itemDateStr < tglMulai) return false;
+        if (tglAkhir && itemDateStr > tglAkhir) return false;
+
         return true;
       });
     }
@@ -3167,7 +3188,8 @@
 
     document.getElementById('btnRefreshDashboard').addEventListener('click', function() { var sheets = ['Malaria', 'MalariaLab', 'HyperhepPasien', 'Tuberkulin', 'RabiesPasien', 'Susu', 'Cobra', 'Difteri']; sheets.forEach(function(s) { state.cache[s] = null; }); loadDashboardData(); });
     document.getElementById('filterTahunDashboard').addEventListener('change', renderDashboard);
-    document.getElementById('filterBulanDashboard').addEventListener('change', renderDashboard);
+    document.getElementById('filterTglMulai').addEventListener('change', renderDashboard);
+    document.getElementById('filterTglAkhir').addEventListener('change', renderDashboard);
 
     // TOMBOL BANTUAN PANDUAN MALARIA
     var btnPanduanJenis = document.getElementById('btnPanduanJenisMalaria');
