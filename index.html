@@ -2850,6 +2850,16 @@
     var tglMulai = document.getElementById('filterTglMulai').value;
     var tglAkhir = document.getElementById('filterTglAkhir').value;
 
+   var isHarian = false;
+    if (tglMulai && tglAkhir) {
+      var d1 = new Date(tglMulai);
+      var d2 = new Date(tglAkhir);
+      var diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 60) isHarian = true;
+    } else if (tglMulai || tglAkhir) {
+      isHarian = true;
+    }
+      
     var dataMap = {
       'Malaria': { data: state.data.Malaria || [], dateField: ['tglKejadian'], categoryField: 'hasilMalaria' },
       'MalariaLab': { data: state.data.MalariaLab || [], dateField: ['tglSDdiperiksa'], categoryField: 'hasilMikroskopis', bulanField: 'bulanLab', tahunField: 'tahunLab' },
