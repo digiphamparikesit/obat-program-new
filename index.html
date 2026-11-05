@@ -2921,7 +2921,8 @@
         }
         if (!itemDateStr) return;
 
-        var key = isHarian ? itemDateStr : itemDateStr.substring(0, 7); // YYYY-MM-DD vs YYYY-MM
+        var key = isHarian ? itemDateStr : (itemDateStr ? itemDateStr.substring(0, 7) : null);
+        if (!key) return; // Mencegah error jika key kosong
         if (!result[key]) result[key] = { label: key, count: {}, total: 0 };
         
         var cat = normalizeCategory(item[categoryField]);
@@ -3097,15 +3098,19 @@
       var ctx = canvas.getContext('2d');
       
       // Modifikasi Label Sumbu X (Harian / Bulanan)
-      var chartLabels = cfg.labels.map(function(l) {
+            var chartLabels = cfg.labels.map(function(l) {
+        if (!l) return '-'; // Mencegah error jika label kosong
         if (isHarian) {
           var d = new Date(l);
+          if (isNaN(d.getTime())) return l; // Jika format tanggal tidak valid
           var bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-          return d.getDate() + ' ' + bulanSingkat[d.getMonth()]; // Contoh: 15 Okt
+          return d.getDate() + ' ' + bulanSingkat[d.getMonth()];
         } else {
           var parts = l.split('-');
+          if (parts.length < 2) return l; // Mencegah error jika data tidak punya '-' (pemisah bulan)
           var bulanFull = NAMA_BULAN[parseInt(parts[1], 10) - 1];
-          return bulanFull.substring(0,3) + ' ' + parts[0]; // Contoh: Okt 2026
+          if (!bulanFull) return l; // Mencegah error jika index bulan tidak valid
+          return bulanFull.substring(0,3) + ' ' + parts[0];
         }
       });
 
