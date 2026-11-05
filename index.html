@@ -2896,75 +2896,226 @@
         return true;
       });
     }
-    function getAllMonthKeys(data, dateField, bulanField, tahunField) {
+        // Fungsi Group Data (Dinamis Harian/Bulanan)
+    function groupDataByPeriod(data, dateField, categoryField, bulanField, tahunField) {
+      var result = {};
+      data.forEach(function(item) {
+        var dateFields = Array.isArray(dateField) ? dateField : [dateField];
+        var itemDateStr = null;
+        for (var i = 0; i < dateFields.length; i++) {
+          if (item[dateFields[i]]) { itemDateStr = String(item[dateFields[i]]).split('T')[0]; break; }
+        }
+        if (!itemDateStr && bulanField && tahunField && item[bulanField] && item[tahunField]) {
+          var bulanIdx = NAMA_BULAN.indexOf(item[bulanField]);
+          if (bulanIdx > -1) { itemDateStr = item[tahunField] + '-' + String(bulanIdx + 1).padStart(2, '0') + '-01'; }
+        }
+        if (!itemDateStr) return;
+
+        var key = isHarian ? itemDateStr : itemDateStr.substring(0, 7); // YYYY-MM-DD vs YYYY-MM
+        if (!result[key]) result[key] = { label: key, count: {}, total: 0 };
+        
+        var cat = normalizeCategory(item[categoryField]);
+        if (!result[key].count[cat]) result[key].count[cat] = 0;
+        result[key].count[cat] += 1;
+        result[key].total += 1;
+      });
+      return result;
+    }
+
+    function groupCountByPeriod(data, dateField, bulanField, tahunField) {
+      var result = {};
+      data.forEach(function(item) {
+        var dateFields = Array.isArray(dateField) ? dateField : [dateField];
+        var itemDateStr = null;
+        for (var i = 0; i < dateFields.length; i++) {
+          if (item[dateFields[i]]) { itemDateStr = String(item[dateFields[i]]).split('T')[0]; break; }
+        }
+        if (!itemDateStr && bulanField && tahunField && item[bulanField] && item[tahunField]) {
+          var bulanIdx = NAMA_BULAN.indexOf(item[bulanField]);
+          if (bulanIdx > -1) { itemDateStr = item[tahunField] + '-' + String(bulanIdx + 1).padStart(2, '0') + '-01'; }
+        }
+        if (!itemDateStr) return;
+        
+        var key = isHarian ? itemDateStr : itemDateStr.substring(0, 7);
+        if (!result[key]) result[key] = { label: key, count: 0 };
+        result[key].count += 1;
+      });
+      return result;
+    }
+
+    function getAllPeriodKeys(data, dateField, bulanField, tahunField) {
       var keys = new Set();
       data.forEach(function(item) {
-        var bt = getBulanTahunWithFallback(item, dateField, bulanField, tahunField);
-        if (bt.tahun && bt.bulan) keys.add(bt.tahun + '-' + bt.bulan);
+        var dateFields = Array.isArray(dateField) ? dateField : [dateField];
+        var itemDateStr = null;
+        for (var i = 0; i < dateFields.length; i++) {
+          if (item[dateFields[i]]) { itemDateStr = String(item[dateFields[i]]).split('T')[0]; break; }
+        }
+        if (!itemDateStr && bulanField && tahunField && item[bulanField] && item[tahunField]) {
+          var bulanIdx = NAMA_BULAN.indexOf(item[bulanField]);
+          if (bulanIdx > -1) { itemDateStr = item[tahunField] + '-' + String(bulanIdx + 1).padStart(2, '0') + '-01'; }
+        }
+        if (!itemDateStr) return;
+        
+        var key = isHarian ? itemDateStr : itemDateStr.substring(0, 7);
+        keys.add(key);
       });
       var keyArray = Array.from(keys);
-      keyArray.sort(function(a, b) {
-        var partsA = a.split('-'), partsB = b.split('-');
-        var tahunA = parseInt(partsA[0], 10), tahunB = parseInt(partsB[0], 10);
-        if (tahunA !== tahunB) return tahunA - tahunB;
-        return NAMA_BULAN.indexOf(partsA[1]) - NAMA_BULAN.indexOf(partsB[1]);
-      });
+      keyArray.sort(function(a, b) { return a.localeCompare(b); });
       return keyArray;
     }
 
     var chartConfigs = [];
-    var m = dataMap.Malaria; var malariaData = filterData(m.data, m.dateField, m.bulanField, m.tahunField); var malariaGroup = groupDataByMonthFallback(malariaData, m.dateField, m.categoryField, m.bulanField, m.tahunField); var malariaCats = getUniqueCategories(malariaData, m.categoryField); var malariaAllKeys = getAllMonthKeys(malariaData, m.dateField, m.bulanField, m.tahunField);
-    var malariaDatasets = malariaCats.map(function(cat, idx) { return { label: cat, data: malariaAllKeys.map(function(key) { return (malariaGroup[key] && malariaGroup[key].count[cat]) ? malariaGroup[key].count[cat] : 0; }), borderColor: COLORS[idx % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }; });
+
+    // MALARIA
+    var m = dataMap.Malaria;
+    var malariaData = filterData(m.data, m.dateField, m.bulanField, m.tahunField);
+    var malariaGroup = groupDataByPeriod(malariaData, m.dateField, m.categoryField, m.bulanField, m.tahunField); 
+    var malariaCats = getUniqueCategories(malariaData, m.categoryField);
+    var malariaAllKeys = getAllPeriodKeys(malariaData, m.dateField, m.bulanField, m.tahunField);
+    var malariaDatasets = malariaCats.map(function(cat, idx) {
+      return { label: cat, data: malariaAllKeys.map(function(key) { return (malariaGroup[key] && malariaGroup[key].count[cat]) ? malariaGroup[key].count[cat] : 0; }), borderColor: COLORS[idx % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 };
+    });
     chartConfigs.push({ id: 'chartMalaria', labels: malariaAllKeys, datasets: malariaDatasets });
 
-    var ml = dataMap.MalariaLab; var labData = filterData(ml.data, ml.dateField, ml.bulanField, ml.tahunField); var labGroup = groupDataByMonthFallback(labData, ml.dateField, ml.categoryField, ml.bulanField, ml.tahunField); var labCats = getUniqueCategories(labData, ml.categoryField); var labAllKeys = getAllMonthKeys(labData, ml.dateField, ml.bulanField, ml.tahunField);
-    var labDatasets = labCats.map(function(cat, idx) { return { label: cat, data: labAllKeys.map(function(key) { return (labGroup[key] && labGroup[key].count[cat]) ? labGroup[key].count[cat] : 0; }), borderColor: COLORS[(idx+1) % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }; });
+    // MALARIA LAB
+    var ml = dataMap.MalariaLab;
+    var labData = filterData(ml.data, ml.dateField, ml.bulanField, ml.tahunField);
+    var labGroup = groupDataByPeriod(labData, ml.dateField, ml.categoryField, ml.bulanField, ml.tahunField); 
+    var labCats = getUniqueCategories(labData, ml.categoryField);
+    var labAllKeys = getAllPeriodKeys(labData, ml.dateField, ml.bulanField, ml.tahunField);
+    var labDatasets = labCats.map(function(cat, idx) {
+      return { label: cat, data: labAllKeys.map(function(key) { return (labGroup[key] && labGroup[key].count[cat]) ? labGroup[key].count[cat] : 0; }), borderColor: COLORS[(idx+1) % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 };
+    });
     chartConfigs.push({ id: 'chartMalariaLab', labels: labAllKeys, datasets: labDatasets });
 
-    var hp = dataMap.HyperhepPasien; var hyperData = filterData(hp.data, hp.dateField, hp.bulanField, hp.tahunField); var hyperGroup = groupDataByMonthFallback(hyperData, hp.dateField, hp.categoryField, hp.bulanField, hp.tahunField); var hyperCats = getUniqueCategories(hyperData, hp.categoryField); var hyperAllKeys = getAllMonthKeys(hyperData, hp.dateField, hp.bulanField, hp.tahunField);
-    var hyperDatasets = hyperCats.map(function(cat, idx) { return { label: cat, data: hyperAllKeys.map(function(key) { return (hyperGroup[key] && hyperGroup[key].count[cat]) ? hyperGroup[key].count[cat] : 0; }), borderColor: COLORS[(idx+3) % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }; });
+    // HYPERHEP
+    var hp = dataMap.HyperhepPasien;
+    var hyperData = filterData(hp.data, hp.dateField, hp.bulanField, hp.tahunField);
+    var hyperGroup = groupDataByPeriod(hyperData, hp.dateField, hp.categoryField, hp.bulanField, hp.tahunField); 
+    var hyperCats = getUniqueCategories(hyperData, hp.categoryField);
+    var hyperAllKeys = getAllPeriodKeys(hyperData, hp.dateField, hp.bulanField, hp.tahunField);
+    var hyperDatasets = hyperCats.map(function(cat, idx) {
+      return { label: cat, data: hyperAllKeys.map(function(key) { return (hyperGroup[key] && hyperGroup[key].count[cat]) ? hyperGroup[key].count[cat] : 0; }), borderColor: COLORS[(idx+3) % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 };
+    });
     chartConfigs.push({ id: 'chartHyperhep', labels: hyperAllKeys, datasets: hyperDatasets });
 
-    var tb = dataMap.Tuberkulin; var tbData = filterData(tb.data, tb.dateField, tb.bulanField, tb.tahunField); var tbGroup = groupCountByMonthFallback(tbData, tb.dateField, tb.bulanField, tb.tahunField); var tbAllKeys = getAllMonthKeys(tbData, tb.dateField, tb.bulanField, tb.tahunField);
+    // TUBERKULIN
+    var tb = dataMap.Tuberkulin;
+    var tbData = filterData(tb.data, tb.dateField, tb.bulanField, tb.tahunField);
+    var tbGroup = groupCountByPeriod(tbData, tb.dateField, tb.bulanField, tb.tahunField); 
+    var tbAllKeys = getAllPeriodKeys(tbData, tb.dateField, tb.bulanField, tb.tahunField);
     var tbDataset = [{ label: 'Jumlah Pasien', data: tbAllKeys.map(function(key) { return tbGroup[key] ? tbGroup[key].count : 0; }), borderColor: COLORS[0], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }];
     chartConfigs.push({ id: 'chartTuberkulin', labels: tbAllKeys, datasets: tbDataset });
 
-    var rb = dataMap.RabiesPasien; var rabiesData = filterData(rb.data, rb.dateField, rb.bulanField, rb.tahunField); var rabiesGroup = groupDataByMonthFallback(rabiesData, rb.dateField, rb.categoryField, rb.bulanField, rb.tahunField); var rabiesCats = getUniqueCategories(rabiesData, rb.categoryField); var rabiesAllKeys = getAllMonthKeys(rabiesData, rb.dateField, rb.bulanField, rb.tahunField);
-    var rabiesDatasets = rabiesCats.map(function(cat, idx) { return { label: cat, data: rabiesAllKeys.map(function(key) { return (rabiesGroup[key] && rabiesGroup[key].count[cat]) ? rabiesGroup[key].count[cat] : 0; }), borderColor: COLORS[(idx+2) % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }; });
+    // RABIES
+    var rb = dataMap.RabiesPasien;
+    var rabiesData = filterData(rb.data, rb.dateField, rb.bulanField, rb.tahunField);
+    var rabiesGroup = groupDataByPeriod(rabiesData, rb.dateField, rb.categoryField, rb.bulanField, rb.tahunField); 
+    var rabiesCats = getUniqueCategories(rabiesData, rb.categoryField);
+    var rabiesAllKeys = getAllPeriodKeys(rabiesData, rb.dateField, rb.bulanField, rb.tahunField);
+    var rabiesDatasets = rabiesCats.map(function(cat, idx) {
+      return { label: cat, data: rabiesAllKeys.map(function(key) { return (rabiesGroup[key] && rabiesGroup[key].count[cat]) ? rabiesGroup[key].count[cat] : 0; }), borderColor: COLORS[(idx+2) % COLORS.length], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 };
+    });
     chartConfigs.push({ id: 'chartRabies', labels: rabiesAllKeys, datasets: rabiesDatasets });
 
-    var ss = dataMap.Susu; var susuData = filterData(ss.data, ss.dateField, ss.bulanField, ss.tahunField); var susuGroup = groupCountByMonthFallback(susuData, ss.dateField, ss.bulanField, ss.tahunField); var susuAllKeys = getAllMonthKeys(susuData, ss.dateField, ss.bulanField, ss.tahunField);
+    // SUSU
+    var ss = dataMap.Susu;
+    var susuData = filterData(ss.data, ss.dateField, ss.bulanField, ss.tahunField);
+    var susuGroup = groupCountByPeriod(susuData, ss.dateField, ss.bulanField, ss.tahunField); 
+    var susuAllKeys = getAllPeriodKeys(susuData, ss.dateField, ss.bulanField, ss.tahunField);
     var susuDataset = [{ label: 'Jumlah Pasien', data: susuAllKeys.map(function(key) { return susuGroup[key] ? susuGroup[key].count : 0; }), borderColor: COLORS[3], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }];
     chartConfigs.push({ id: 'chartSusu', labels: susuAllKeys, datasets: susuDataset });
 
-    var cb = dataMap.Cobra; var cobraData = filterData(cb.data, cb.dateField, cb.bulanField, cb.tahunField); var cobraGroup = groupCountByMonthFallback(cobraData, cb.dateField, cb.bulanField, cb.tahunField); var cobraAllKeys = getAllMonthKeys(cobraData, cb.dateField, cb.bulanField, cb.tahunField);
+    // COBRA
+    var cb = dataMap.Cobra;
+    var cobraData = filterData(cb.data, cb.dateField, cb.bulanField, cb.tahunField);
+    var cobraGroup = groupCountByPeriod(cobraData, cb.dateField, cb.bulanField, cb.tahunField); 
+    var cobraAllKeys = getAllPeriodKeys(cobraData, cb.dateField, cb.bulanField, cb.tahunField);
     var cobraDataset = [{ label: 'Jumlah Pasien', data: cobraAllKeys.map(function(key) { return cobraGroup[key] ? cobraGroup[key].count : 0; }), borderColor: COLORS[4], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }];
     chartConfigs.push({ id: 'chartCobra', labels: cobraAllKeys, datasets: cobraDataset });
 
-    var df = dataMap.Difteri; var difteriData = filterData(df.data, df.dateField, df.bulanField, df.tahunField); var difteriGroup = groupCountByMonthFallback(difteriData, df.dateField, df.bulanField, df.tahunField); var difteriAllKeys = getAllMonthKeys(difteriData, df.dateField, df.bulanField, df.tahunField);
+    // DIFTERI
+    var df = dataMap.Difteri;
+    var difteriData = filterData(df.data, df.dateField, df.bulanField, df.tahunField);
+    var difteriGroup = groupCountByPeriod(difteriData, df.dateField, df.bulanField, df.tahunField); 
+    var difteriAllKeys = getAllPeriodKeys(difteriData, df.dateField, df.bulanField, df.tahunField);
     var difteriDataset = [{ label: 'Jumlah Pasien', data: difteriAllKeys.map(function(key) { return difteriGroup[key] ? difteriGroup[key].count : 0; }), borderColor: COLORS[5], backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.25, fill: false, pointRadius: 4, pointHoverRadius: 7 }];
     chartConfigs.push({ id: 'chartDifteri', labels: difteriAllKeys, datasets: difteriDataset });
 
     var grandTotals = {};
-    chartConfigs.forEach(function(cfg) { var total = 0; cfg.datasets.forEach(function(ds) { ds.data.forEach(function(v) { total += (v || 0); }); }); grandTotals[cfg.id] = total; });
+    chartConfigs.forEach(function(cfg) {
+      var total = 0;
+      cfg.datasets.forEach(function(ds) { ds.data.forEach(function(v) { total += (v || 0); }); });
+      grandTotals[cfg.id] = total;
+    });
 
     chartConfigs.forEach(function(cfg) {
-      var canvas = document.getElementById(cfg.id); if (!canvas) return;
+      var canvas = document.getElementById(cfg.id);
+      if (!canvas) return;
       if (state.charts[cfg.id]) { state.charts[cfg.id].destroy(); delete state.charts[cfg.id]; }
+
       var card = canvas.closest('.chart-card');
       if (card) {
         var h4 = card.querySelector('h4');
-        if (h4) { var existingTotal = h4.querySelector('.chart-total'); if (existingTotal) existingTotal.textContent = 'Total: ' + grandTotals[cfg.id]; else { var totalSpan = document.createElement('span'); totalSpan.className = 'chart-total'; totalSpan.textContent = 'Total: ' + grandTotals[cfg.id]; h4.appendChild(totalSpan); } }
-        if (!card.querySelector('.chart-hint')) { var hint = document.createElement('div'); hint.className = 'chart-hint'; hint.textContent = '🔍 Klik untuk perbesar'; card.appendChild(hint); }
-        if (!card.querySelector('.chart-close-btn')) { var closeBtn = document.createElement('button'); closeBtn.className = 'chart-close-btn'; closeBtn.innerHTML = '&times;'; closeBtn.title = 'Tutup (Esc)'; closeBtn.addEventListener('click', function(ev) { ev.stopPropagation(); collapseChart(card); }); card.appendChild(closeBtn); }
+        if (h4) {
+          var existingTotal = h4.querySelector('.chart-total');
+          if (existingTotal) existingTotal.textContent = 'Total: ' + grandTotals[cfg.id];
+          else {
+            var totalSpan = document.createElement('span');
+            totalSpan.className = 'chart-total';
+            totalSpan.textContent = 'Total: ' + grandTotals[cfg.id];
+            h4.appendChild(totalSpan);
+          }
+        }
+        if (!card.querySelector('.chart-hint')) {
+          var hint = document.createElement('div');
+          hint.className = 'chart-hint';
+          hint.textContent = '🔍 Klik untuk perbesar';
+          card.appendChild(hint);
+        }
+        if (!card.querySelector('.chart-close-btn')) {
+          var closeBtn = document.createElement('button');
+          closeBtn.className = 'chart-close-btn';
+          closeBtn.innerHTML = '&times;';
+          closeBtn.title = 'Tutup (Esc)';
+          closeBtn.addEventListener('click', function(ev) { ev.stopPropagation(); collapseChart(card); });
+          card.appendChild(closeBtn);
+        }
       }
+
       var ctx = canvas.getContext('2d');
+      
+      // Modifikasi Label Sumbu X (Harian / Bulanan)
+      var chartLabels = cfg.labels.map(function(l) {
+        if (isHarian) {
+          var d = new Date(l);
+          var bulanSingkat = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+          return d.getDate() + ' ' + bulanSingkat[d.getMonth()]; // Contoh: 15 Okt
+        } else {
+          var parts = l.split('-');
+          var bulanFull = NAMA_BULAN[parseInt(parts[1], 10) - 1];
+          return bulanFull.substring(0,3) + ' ' + parts[0]; // Contoh: Okt 2026
+        }
+      });
+
       state.charts[cfg.id] = new Chart(ctx, {
-        type: 'line', data: { labels: cfg.labels.map(function(l) { var p = l.split('-'); return p[1] + ' ' + p[0]; }), datasets: cfg.datasets },
-        options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 14, padding: 10, font: { size: 11, weight: '500' }, usePointStyle: true } }, tooltip: { backgroundColor: 'rgba(15,107,82,0.95)', titleFont: { size: 13, weight: 'bold' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 6, displayColors: true } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } } } }
+        type: 'line',
+        data: { labels: chartLabels, datasets: cfg.datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 14, padding: 10, font: { size: 11, weight: '500' }, usePointStyle: true } },
+            tooltip: { backgroundColor: 'rgba(15,107,82,0.95)', titleFont: { size: 13, weight: 'bold' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 6, displayColors: true }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } }
+          }
+        }
       });
     });
-    document.getElementById('emptyDashboard').style.display = 'none';
     document.getElementById('dashboardGrid').style.display = 'grid';
   }
 
