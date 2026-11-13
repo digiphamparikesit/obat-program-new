@@ -979,7 +979,7 @@
     Object.keys(payload).forEach(function(k) {
       if (SKIP_FIELDS.indexOf(k) > -1) return;
       var val = payload[k];
-      out[camelToSnake(k)] = (val === '' || val === undefined) ? null : val;
+      out[camelToSnake(k)] = (val === '' || val === undefined || val === null) ? null : val;
     });
     return out;
   }
