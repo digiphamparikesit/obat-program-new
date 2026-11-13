@@ -1732,19 +1732,43 @@
     tbody.querySelectorAll('.delete-lab-btn').forEach(function(btn){ btn.addEventListener('click', function(){ handleDelete('MalariaLab', list[parseInt(btn.dataset.idx)], refreshMalariaLabLaporan); }); });
   }
 
-  function applyFilterMalariaLab(){
+    function applyFilterMalariaLab(){
     var q = document.getElementById('searchBoxMalariaLab').value.trim().toLowerCase();
     var bulan = document.getElementById('filterBulanMalariaLab').value;
     var tahun = document.getElementById('filterTahunMalariaLab').value;
     var hasil = document.getElementById('filterHasilMalariaLab').value;
+    
     var list = state.data.MalariaLab || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasienLab||'').toLowerCase().indexOf(q)>-1 || (item.noRegLab||'').toLowerCase().indexOf(q)>-1;
+      
       var bt = getBulanTahunWithFallback(item, ['tglSDdiperiksa'], 'bulanLab', 'tahunLab');
-      var matchHasil = !hasil || item.hasilMikroskopis === hasil;
-      return matchQ && (!bulan || bt.bulan === bulan) && (!tahun || bt.tahun === tahun);
+      var matchBulanTahun = (!bulan || bt.bulan === bulan) && (!tahun || bt.tahun === tahun);
+
+      // --- PERBAIKAN FILTER HASIL ---
+      var matchHasil = true;
+      if (hasil) {
+        var itemHasil = item.hasilMikroskopis ? String(item.hasilMikroskopis).toLowerCase() : '';
+        
+        if (hasil === 'Negatif') {
+          matchHasil = itemHasil.indexOf('negatif') > -1;
+        } else if (hasil === 'Positif Falciparum') {
+          matchHasil = itemHasil.indexOf('falciparum') > -1;
+        } else if (hasil === 'Positif Vivax') {
+          matchHasil = itemHasil.indexOf('vivax') > -1;
+        } else if (hasil === 'Positif Mix') {
+          matchHasil = itemHasil.indexOf('mix') > -1;
+        } else {
+          matchHasil = (itemHasil === hasil.toLowerCase());
+        }
+      }
+
+      return matchQ && matchBulanTahun && matchHasil;
     });
-    state.filteredData.MalariaLab = filtered; state.malariaLabDataFiltered = filtered; renderMalariaLabLaporan(filtered);
+    
+    state.filteredData.MalariaLab = filtered; 
+    state.malariaLabDataFiltered = filtered; 
+    renderMalariaLabLaporan(filtered);
   }
   function populateFilterTahunMalariaLab(list){
     var select = document.getElementById('filterTahunMalariaLab'); 
