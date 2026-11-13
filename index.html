@@ -342,6 +342,21 @@
         <div class="toolbar">
           <input type="text" id="searchBox" placeholder="Cari...">
           <select id="filterBulanMalaria"><option value="">Semua Bulan</option><option value="Januari">Januari</option><option value="Februari">Februari</option><option value="Maret">Maret</option><option value="April">April</option><option value="Mei">Mei</option><option value="Juni">Juni</option><option value="Juli">Juli</option><option value="Agustus">Agustus</option><option value="September">September</option><option value="Oktober">Oktober</option><option value="November">November</option><option value="Desember">Desember</option></select>
+          
+          <!-- TAMBAHAN: FILTER HASIL MALARIA -->
+          <select id="filterHasilMalaria">
+            <option value="">Semua Hasil</option>
+            <option value="Plasmodium Falciparum">Plasmodium Falciparum</option>
+            <option value="Plasmodium Vivax">Plasmodium Vivax</option>
+            <option value="Plasmodium Malariae">Plasmodium Malariae</option>
+            <option value="Plasmodium Ovale">Plasmodium Ovale</option>
+            <option value="Plasmodium Knowlesi">Plasmodium Knowlesi</option>
+            <option value="Plasmodium Mix">Plasmodium Mix</option>
+            <option value="Tidak Diketahui">Tidak Diketahui</option>
+          </select>
+          <!-- END TAMBAHAN -->
+
+          <select id="filterBulanMalaria">...</select>
           <select id="filterTahunMalaria"><option value="">Semua Tahun</option></select>
           <button class="btn btn-secondary" id="btnRefresh">🔄 Muat</button>
           <button class="btn btn-primary" id="btnExportExcelMalaria">📊 Excel</button>
@@ -1633,14 +1648,22 @@
   }
 
   function applyFilter(){
+      function applyFilter(){
     var q = document.getElementById('searchBox').value.trim().toLowerCase();
     var bulan = document.getElementById('filterBulanMalaria').value;
     var tahun = document.getElementById('filterTahunMalaria').value;
+    var hasil = document.getElementById('filterHasilMalaria').value; // ← BACA FILTER HASIL
+    
     var list = state.data.Malaria || [];
     var filtered = list.filter(function(item){
       var matchQ = !q || (item.namaPasien||'').toLowerCase().indexOf(q)>-1 || (item.noReg||'').toLowerCase().indexOf(q)>-1;
       var bt = getBulanTahunWithFallback(item, 'tglKejadian', null, null);
-      return matchQ && (!bulan || bt.bulan === bulan) && (!tahun || bt.tahun === tahun);
+      
+      // Cek filter hasil (normalisasi biar aman dari perbedaan huruf besar/kecil)
+      var itemHasil = normalizeCategory(item.hasilMalaria);
+      var matchHasil = !hasil || itemHasil === hasil;
+
+      return matchQ && matchHasil && (!bulan || bt.bulan === bulan) && (!tahun || bt.tahun === tahun);
     });
     state.filteredData.Malaria = filtered; renderLaporan(filtered);
   }
@@ -3310,6 +3333,8 @@
     document.getElementById('searchBox').addEventListener('input', applyFilter);
     document.getElementById('filterBulanMalaria').addEventListener('change', applyFilter);
     document.getElementById('filterTahunMalaria').addEventListener('change', applyFilter);
+    document.getElementById('filterHasilMalaria').addEventListener('change', applyFilter);
+    document.getElementById('filterHasilMalariaLab').addEventListener('change', applyFilterMalariaLab);
     document.getElementById('searchBoxMalariaLab').addEventListener('input', applyFilterMalariaLab);
     document.getElementById('filterBulanMalariaLab').addEventListener('change', applyFilterMalariaLab);
     document.getElementById('filterTahunMalariaLab').addEventListener('change', applyFilterMalariaLab);
