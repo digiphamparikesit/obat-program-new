@@ -1400,7 +1400,7 @@
       document.getElementById('formEditMalaria').addEventListener('submit', function(ev){ ev.preventDefault(); saveEditMalaria(); });
     }
     function fillField(id, val){ var el = document.getElementById(id); if (el) el.value = (val !== undefined && val !== null) ? val : ''; }
-    function trimTime(s){ return s ? String(s).split('T')[0] : ''; }
+    function trimTime(s){ if (!s) return ''; return String(s).split('T')[0]; }
     fillField('emNama', item.namaPasien); fillField('emTglLahir', trimTime(item.tglLahir)); fillField('emUmur', item.umur); fillField('emNoReg', item.noReg);
     fillField('emNoTelp', item.noTelp); fillField('emNik', item.nikKtp); fillField('emFaskes', item.faskes);
     fillField('emAlamatDomisili', item.alamatDomisili); fillField('emAlamatKTP', item.alamatKTP); fillField('emDerajat', item.derajatMalaria); fillField('emHasil', item.hasilMalaria);
@@ -1479,7 +1479,7 @@
       document.getElementById('formEditRabies').addEventListener('submit', function(ev){ ev.preventDefault(); saveEditRabies(); });
     }
     function fillField(id, val){ var el = document.getElementById(id); if (el) el.value = (val !== undefined && val !== null) ? val : ''; }
-    function trimTime(s){ return s ? String(s).split('T')[0] : ''; }
+    function trimTime(s){ if (!s) return ''; return String(s).split('T')[0]; }
     fillField('erNoReg', item.noReg); fillField('erNama', item.namaPasien); fillField('erNik', item.nikKtp); fillField('erTglLahir', trimTime(item.tglLahir));
     fillField('erUmur', item.umur); fillField('erNoHp', item.noHp); fillField('erAlamat', item.alamatKtp); fillField('erVaksinKe', item.vaksinKe);
     fillField('erVial', item.jumlahVialRabies); fillField('erPuskesmas', item.puskesmasRujukan); fillField('erHewan', item.jenisHewan); fillField('erLokasi', item.lokasiGigitan);
@@ -1551,7 +1551,7 @@
       document.getElementById('formEditMalariaLab').addEventListener('submit', function(ev){ ev.preventDefault(); saveEditMalariaLab(); });
     }
     function fillField(id, val){ var el = document.getElementById(id); if (el) el.value = (val !== undefined && val !== null) ? val : ''; }
-    function trimTime(s){ return s ? String(s).split('T')[0] : ''; }
+    function trimTime(s){ if (!s) return ''; return String(s).split('T')[0]; }
     fillField('elNoReg', item.noRegLab); fillField('elNama', item.namaPasienLab); fillField('elJK', item.jenisKelamin); fillField('elTglLahir', trimTime(item.tglLahirLab));
     fillField('elUsia', item.usiaLab); fillField('elAlamat', item.alamatLengkapLab); fillField('elMetode', item.metodePemeriksaan); fillField('elAlasan', item.alasanPemeriksaan);
     fillField('elHasil', item.hasilMikroskopis); fillField('elGametosit', item.gametosit); fillField('elKepadatan', item.kepadatanParasit); fillField('elKodeSlide', item.kodeSlide);
